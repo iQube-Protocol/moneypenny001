@@ -19,8 +19,18 @@ export interface ReferencePrice {
   symbol: string;
   price_usd: number;
   source: string;
-  timestamp: string;
-  freshness_sec: number;
+  ts: string;
+}
+
+export interface DexPair {
+  chain: string;
+  pair_address: string;
+  price_usd: number;
+  liquidity_usd: number;
+  volume_24h_usd: number;
+  fee_bps: number;
+  ts: string;
+  source: string;
 }
 
 export interface ChainHealth {
@@ -34,6 +44,44 @@ export interface ChainHealth {
 
 export class OraclesModule {
   constructor(private client: MoneyPennyClient) {}
+
+  // === Reference Price (CoinGecko) ===
+  
+  async getReferencePrice(symbol: string): Promise<ReferencePrice> {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/oracle-refprice/${symbol}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch reference price for ${symbol}`);
+    }
+    
+    return response.json();
+  }
+
+  // === DEX Venue Data (DexScreener) ===
+  
+  async getDexPair(chain: string, pairAddress: string): Promise<DexPair> {
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/oracle-dex/${chain}/${pairAddress}`,
+      {
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+      }
+    );
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch DEX pair data for ${chain}/${pairAddress}`);
+    }
+    
+    return response.json();
+  }
 
   // === Gas Oracles ===
 
@@ -57,26 +105,14 @@ export class OraclesModule {
     });
   }
 
-  // === Price Oracles ===
-
-  // Get reference price for asset
-  async getReferencePrice(symbol: string): Promise<ReferencePrice> {
-    const config = this.client.getConfig();
-    
-    return this.client['fetch'](`${config.oracleUrl}/price/${symbol}`, {
-      skipAuth: true,
-    });
-  }
-
   // Get reference prices for multiple assets
   async getReferencePrices(symbols: string[]): Promise<ReferencePrice[]> {
-    const config = this.client.getConfig();
-    
-    return this.client['fetch'](`${config.oracleUrl}/price/batch`, {
-      method: 'POST',
-      body: JSON.stringify({ symbols }),
-      skipAuth: true,
-    });
+    return Promise.all(symbols.map(s => this.getReferencePrice(s)));
+  }
+
+  // Get DEX pairs for multiple addresses
+  async getDexPairs(pairs: Array<{ chain: string; pairAddress: string }>): Promise<DexPair[]> {
+    return Promise.all(pairs.map(p => this.getDexPair(p.chain, p.pairAddress)));
   }
 
   // === Chain Health ===
