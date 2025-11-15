@@ -18,6 +18,8 @@ export function OverlayManager() {
         return <LiveInsightsOverlay />;
       case 'profile':
         return <ProfileOverlay />;
+      case 'metavatar':
+        return <div className="space-y-4 h-full overflow-y-auto"><h2 className="text-2xl font-bold neon-text">MetaVatar</h2><p className="text-sm text-muted-foreground mt-1">AI-powered avatar interface</p></div>;
       default:
         return null;
     }
