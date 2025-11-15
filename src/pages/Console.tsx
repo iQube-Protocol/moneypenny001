@@ -12,6 +12,7 @@ import { ExecutionHistory } from "@/components/ExecutionHistory";
 import { MoneyPennyChat } from "@/components/MoneyPennyChat";
 import { FIOManager } from "@/components/FIOManager";
 import { RiskDashboard } from "@/components/RiskDashboard";
+import { NotificationCenter } from "@/components/NotificationCenter";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMoneyPenny } from "@/lib/aigent/moneypenny/client";
@@ -175,6 +176,7 @@ export default function Console() {
               <Link to="/profile">
                 <Button variant="outline" size="sm">Profile</Button>
               </Link>
+              <NotificationCenter />
               <Badge variant={mode === "LIVE" ? "destructive" : "secondary"} className="text-xs">
                 <Activity className="h-3 w-3 mr-1" />
                 {mode} MODE
