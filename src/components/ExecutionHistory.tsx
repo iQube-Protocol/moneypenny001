@@ -6,6 +6,7 @@ import { ChainChip } from "./ChainChip";
 import { useMoneyPenny } from "@/lib/aigent/moneypenny/client";
 import { Intent, Execution } from "@/lib/aigent/moneypenny/modules/execution";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Select,
   SelectContent,
@@ -43,6 +44,23 @@ export function ExecutionHistory() {
 
   useEffect(() => {
     loadData();
+
+    // Subscribe to real-time execution fill notifications
+    const channel = supabase
+      .channel('notifications')
+      .on('broadcast', { event: 'notification' }, (payload) => {
+        const notification = payload.payload as any;
+        if (notification.type === 'execution_fill') {
+          console.log('Real-time execution fill received:', notification);
+          // Reload data to show the new execution
+          loadData();
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadData = async () => {
