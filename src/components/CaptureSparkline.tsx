@@ -12,7 +12,7 @@ interface CaptureSparklineProps {
   totalQc: number;
 }
 
-const timeframes = ["1m", "15m", "30m", "1h", "24h", "48h", "1w", "1m"] as const;
+const timeframes = ["1m", "15m", "30m", "1h", "24h", "48h", "1w", "1M"] as const;
 
 export function CaptureSparkline({ data, totalQc }: CaptureSparklineProps) {
   const [selectedTimeframe, setSelectedTimeframe] = useState<typeof timeframes[number]>("24h");

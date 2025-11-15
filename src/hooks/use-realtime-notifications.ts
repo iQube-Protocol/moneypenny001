@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { getMoneyPenny } from '@/lib/aigent/moneypenny/client';
+import { supabase } from '@/integrations/supabase/client';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface NotificationEvent {
   type: 'x402_claim' | 'x402_custody' | 'fio_payment' | 'execution_fill';
@@ -12,7 +13,7 @@ export interface NotificationEvent {
 export function useRealtimeNotifications(enabled: boolean = true) {
   const { toast } = useToast();
   const [isConnected, setIsConnected] = useState(false);
-  const wsRef = useRef<WebSocket | null>(null);
+  const wsRef = useRef<RealtimeChannel | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout>();
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
@@ -76,69 +77,49 @@ export function useRealtimeNotifications(enabled: boolean = true) {
   };
 
   const connect = () => {
-    if (!enabled || wsRef.current?.readyState === WebSocket.OPEN) {
+    if (!enabled) {
       return;
     }
 
     try {
-      // Use project-specific WebSocket URL
-      const wsUrl = 'wss://csmytlhrdcnjzqrmimnw.supabase.co/realtime/v1/websocket';
-      console.log('Connecting to WebSocket:', wsUrl);
-
-      wsRef.current = new WebSocket(wsUrl);
-
-      wsRef.current.onopen = () => {
-        console.log('WebSocket connected');
-        setIsConnected(true);
-        reconnectAttempts.current = 0;
-
-        // Subscribe to notification channels
-        const subscribeMessage = {
-          type: 'subscribe',
-          channels: ['x402_notifications', 'fio_notifications', 'execution_notifications'],
-        };
-        wsRef.current?.send(JSON.stringify(subscribeMessage));
-      };
-
-      wsRef.current.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('WebSocket message:', data);
-
-          if (data.type === 'notification') {
-            handleNotification(data.event as NotificationEvent);
+      console.log('Setting up real-time notifications...');
+      
+      // Subscribe to notification channels using Supabase client
+      const channel = supabase
+        .channel('notifications')
+        .on('broadcast', { event: 'notification' }, (payload) => {
+          console.log('Notification received:', payload);
+          handleNotification(payload.payload as NotificationEvent);
+        })
+        .subscribe((status) => {
+          console.log('Subscription status:', status);
+          if (status === 'SUBSCRIBED') {
+            setIsConnected(true);
+            reconnectAttempts.current = 0;
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            setIsConnected(false);
+            
+            // Attempt reconnection with exponential backoff
+            if (enabled && reconnectAttempts.current < maxReconnectAttempts) {
+              const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
+              console.log(`Reconnecting in ${delay}ms...`);
+              
+              reconnectTimeoutRef.current = setTimeout(() => {
+                reconnectAttempts.current++;
+                connect();
+              }, delay);
+            }
           }
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
-        }
-      };
-
-      wsRef.current.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        toast({
-          title: 'Connection Error',
-          description: 'Failed to connect to real-time notifications',
-          variant: 'destructive',
         });
-      };
 
-      wsRef.current.onclose = () => {
-        console.log('WebSocket disconnected');
-        setIsConnected(false);
-
-        // Attempt reconnection with exponential backoff
-        if (enabled && reconnectAttempts.current < maxReconnectAttempts) {
-          const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current), 30000);
-          console.log(`Reconnecting in ${delay}ms...`);
-          
-          reconnectTimeoutRef.current = setTimeout(() => {
-            reconnectAttempts.current++;
-            connect();
-          }, delay);
-        }
-      };
+      wsRef.current = channel;
     } catch (error) {
-      console.error('Error creating WebSocket:', error);
+      console.error('Error setting up notifications:', error);
+      toast({
+        title: 'Connection Error',
+        description: 'Failed to connect to real-time notifications',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -148,7 +129,7 @@ export function useRealtimeNotifications(enabled: boolean = true) {
     }
     
     if (wsRef.current) {
-      wsRef.current.close();
+      supabase.removeChannel(wsRef.current);
       wsRef.current = null;
     }
     
