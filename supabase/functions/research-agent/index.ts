@@ -40,8 +40,8 @@ function generateStrategy(topic: string, results: TavilyResult[], summary: strin
   const content = results.map(r => r.content.toLowerCase()).join(' ');
   
   // Detect bullish/bearish signals
-  const bullishWords = ['bullish', 'buy', 'uptrend', 'positive', 'growth', 'rally'];
-  const bearishWords = ['bearish', 'sell', 'downtrend', 'negative', 'decline', 'drop'];
+  const bullishWords = ['bullish', 'buy', 'uptrend', 'positive', 'growth', 'rally', 'strong', 'gain'];
+  const bearishWords = ['bearish', 'sell', 'downtrend', 'negative', 'decline', 'drop', 'weak', 'loss'];
   
   const bullishCount = bullishWords.filter(w => content.includes(w)).length;
   const bearishCount = bearishWords.filter(w => content.includes(w)).length;
@@ -53,13 +53,18 @@ function generateStrategy(topic: string, results: TavilyResult[], summary: strin
   // Extract instrument from topic
   const instrument = topic.match(/\b(ETH|BTC|SOL|MATIC|ARB)\b/i)?.[0]?.toUpperCase() || 'ETH';
   
+  // Calculate a reasonable size based on confidence (50-500 Q¢ range)
+  const baseSize = 100;
+  const confidenceMultiplier = avgScore * 4; // 0.0-4.0 multiplier
+  const size = action === 'hold' ? 0 : Math.round(baseSize * (1 + confidenceMultiplier));
+  
   return {
     action,
     instrument: `${instrument}-USDC`,
     chain: instrument === 'BTC' ? 'btc' : instrument === 'SOL' ? 'sol' : 'eth',
-    size_qc: action === 'hold' ? 0 : Math.min(1000, Math.round(avgScore * 2000)),
+    size_qc: Math.min(500, Math.max(50, size)), // Clamp between 50-500
     min_edge_bps: Math.round(20 + (1 - avgScore) * 30),
-    rationale: `Based on ${results.length} sources: ${bullishCount} bullish, ${bearishCount} bearish signals`,
+    rationale: `Based on ${results.length} sources: ${bullishCount} bullish, ${bearishCount} bearish signals. Confidence: ${Math.round(avgScore * 100)}%`,
     confidence: Math.round(avgScore * 100),
   };
 }
