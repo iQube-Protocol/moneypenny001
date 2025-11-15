@@ -1,9 +1,14 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
 export function MetaVatarOverlay() {
-  const containerRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
+    // Remove any existing D-ID script
+    const existingScript = document.querySelector('script[data-name="did-agent"]');
+    if (existingScript) {
+      existingScript.remove();
+    }
+
+    // Create and append new script to document body
     const script = document.createElement('script');
     script.type = 'module';
     script.src = 'https://agent.d-id.com/v2/index.js';
@@ -15,13 +20,12 @@ export function MetaVatarOverlay() {
     script.setAttribute('data-orientation', 'horizontal');
     script.setAttribute('data-position', 'right');
 
-    if (containerRef.current) {
-      containerRef.current.appendChild(script);
-    }
+    document.body.appendChild(script);
 
     return () => {
-      if (containerRef.current && containerRef.current.contains(script)) {
-        containerRef.current.removeChild(script);
+      const scriptToRemove = document.querySelector('script[data-name="did-agent"]');
+      if (scriptToRemove) {
+        scriptToRemove.remove();
       }
     };
   }, []);
@@ -35,7 +39,7 @@ export function MetaVatarOverlay() {
         </p>
       </div>
       
-      <div ref={containerRef} className="w-full h-[calc(100%-5rem)] min-h-[400px]" />
+      <div id="did-agent-container" className="w-full h-[calc(100%-5rem)] min-h-[500px] rounded-lg bg-card/50" />
     </div>
   );
 }
