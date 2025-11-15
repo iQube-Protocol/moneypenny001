@@ -13,7 +13,11 @@ export default function Console() {
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold neon-text">Console</h1>
+              <h1 className="text-2xl font-bold">
+                <span className="text-success">MoneyPenny</span>{" "}
+                <span className="neon-text">Q¢ HFT Aigent</span>{" "}
+                <span className="neon-text">Console</span>
+              </h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Real-time trading console powered by AI
               </p>
