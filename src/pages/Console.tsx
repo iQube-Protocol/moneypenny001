@@ -7,12 +7,13 @@ import { EdgeGauge } from "@/components/EdgeGauge";
 import { QuotesTable } from "@/components/QuotesTable";
 import { FillsTicker } from "@/components/FillsTicker";
 import { CaptureSparkline } from "@/components/CaptureSparkline";
-import { ExecutionHistory } from "@/components/ExecutionHistory";
+import { ExecutionHistoryCompact } from "@/components/ExecutionHistoryCompact";
+import { ExecutionInsights } from "@/components/ExecutionInsights";
+import { ExecutionFeed } from "@/components/ExecutionFeed";
 import { MoneyPennyChat } from "@/components/MoneyPennyChat";
 import { WalletStatus } from "@/components/WalletStatus";
 import { AdvancedIntentForm } from "@/components/AdvancedIntentForm";
 import { NotificationCenter } from "@/components/NotificationCenter";
-import { ExecutionFeed } from "@/components/ExecutionFeed";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMoneyPenny } from "@/lib/aigent/moneypenny/client";
@@ -244,10 +245,13 @@ export default function Console() {
           </div>
         </div>
 
-        {/* Section 3: Execution History and Live Feed */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <ExecutionHistory />
-          <ExecutionFeed maxItems={15} showSound={true} />
+        {/* Section 3: Execution Feed + Insights, with History Below */}
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <ExecutionFeed maxItems={15} showSound={true} />
+            <ExecutionInsights />
+          </div>
+          <ExecutionHistoryCompact />
         </div>
 
         {/* AI Assistant */}
