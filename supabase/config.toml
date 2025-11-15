@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.arbitrage-scanner]
 verify_jwt = false
+
+[functions.oracle-refprice]
+verify_jwt = false
+
+[functions.oracle-dex]
+verify_jwt = false

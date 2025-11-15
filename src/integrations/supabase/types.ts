@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      cache_store: {
+        Row: {
+          created_at: string | null
+          expires_at: string
+          key: string
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          expires_at: string
+          key: string
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          expires_at?: string
+          key?: string
+          value?: string
+        }
+        Relationships: []
+      }
       trading_executions: {
         Row: {
           avg_price: number
