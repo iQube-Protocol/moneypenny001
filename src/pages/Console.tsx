@@ -227,8 +227,8 @@ export default function Console() {
         </div>
 
         {/* Section 2: Advanced Trading Intent + Capture & Fills */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
             <AdvancedIntentForm availableChains={selectedChains} />
           </div>
           <div className="space-y-6">
