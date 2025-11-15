@@ -9,10 +9,11 @@ import { ResearchOverlay } from "./ResearchOverlay";
 
 interface OverlayManagerProps {
   currentStrategy?: any;
+  onStrategyChange?: (strategy: any) => void;
 }
 
-export function OverlayManager({ currentStrategy }: OverlayManagerProps) {
-  const { activeOverlay, closeOverlay } = useOverlayManager();
+export function OverlayManager({ currentStrategy, onStrategyChange }: OverlayManagerProps) {
+  const { activeOverlay, closeOverlay, openOverlay } = useOverlayManager();
 
   const renderOverlay = () => {
     switch (activeOverlay) {
@@ -27,7 +28,12 @@ export function OverlayManager({ currentStrategy }: OverlayManagerProps) {
       case 'metavatar':
         return <MetaVatarOverlay />;
       case 'research':
-        return <ResearchOverlay />;
+        return <ResearchOverlay onStrategyUpdate={(strategy) => {
+          if (onStrategyChange) {
+            onStrategyChange(strategy);
+          }
+          setTimeout(() => openOverlay('intent-capture'), 300);
+        }} />;
       default:
         return null;
     }

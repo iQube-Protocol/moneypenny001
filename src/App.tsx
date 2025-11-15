@@ -13,6 +13,7 @@ import { Auth } from "./components/Auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { initMoneyPenny } from "./lib/aigent/moneypenny/client";
 import { createConfigFromEnv, validateConfig } from "./lib/aigent/core/config";
+import { OverlayManager } from "./components/overlays/OverlayManager";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const moneyPenny = initMoneyPenny(config, queryClient);
 
 const App = () => {
   const [healthStatus, setHealthStatus] = useState<string>('checking');
+  const [currentStrategy, setCurrentStrategy] = useState<any>(null);
 
   useEffect(() => {
     // Test all module connections
@@ -109,9 +111,12 @@ const App = () => {
               </ProtectedRoute>
             } />
             <Route path="/metavatar" element={<MetaVatar />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <OverlayManager 
+            currentStrategy={currentStrategy} 
+            onStrategyChange={setCurrentStrategy}
+          />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
