@@ -22,6 +22,7 @@ import { PersonaManager } from "@/components/PersonaManager";
 import { TransactionHistory } from "@/components/TransactionHistory";
 import { FeeEstimator } from "@/components/FeeEstimator";
 import { StrategyBuilder } from "@/components/StrategyBuilder";
+import { LiquidityAnalytics } from "@/components/LiquidityAnalytics";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -300,6 +301,11 @@ export default function Console() {
         {/* Risk Dashboard */}
         <div className="mt-6">
           <RiskDashboard />
+        </div>
+
+        {/* Liquidity Analytics */}
+        <div className="mt-6">
+          <LiquidityAnalytics />
         </div>
 
         {/* Portfolio Analytics */}
