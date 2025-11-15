@@ -15,7 +15,7 @@ export function createConfigFromEnv(): AgentiQConfig {
     aggregateUrl: import.meta.env.VITE_AGGREGATE_URL || 'https://aggregate.aigent.dev',
     memoriesUrl: import.meta.env.VITE_MEMORIES_URL || 'https://memories.aigent.dev',
     quotesUrl: import.meta.env.VITE_QUOTES_URL || 'https://quotes.aigent.dev',
-    executionUrl: import.meta.env.VITE_EXECUTION_URL || 'https://execution.aigent.dev',
+    executionUrl: import.meta.env.VITE_EXECUTION_URL || `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/execution-engine`,
     oracleUrl: import.meta.env.VITE_ORACLE_URL || 'https://oracle.aigent.dev',
     agentsUrl: import.meta.env.VITE_AGENTS_URL || 'https://agents.aigent.dev',
     dvnUrl: import.meta.env.VITE_DVN_URL || 'https://dvn.aigent.dev',
