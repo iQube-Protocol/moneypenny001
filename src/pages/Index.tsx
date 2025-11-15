@@ -2,10 +2,8 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Sparkles, TrendingUp, Shield, Zap } from "lucide-react";
 import { WalletDrawer } from "@/components/WalletDrawer";
-
 export default function Index() {
-  return (
-    <div className="min-h-screen flex flex-col">
+  return <div className="min-h-screen flex flex-col">
       {/* Header */}
       <header className="border-b border-border glass-card">
         <div className="container mx-auto px-6 py-4">
@@ -38,7 +36,7 @@ export default function Index() {
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
-            <span className="neon-text">Aigent MoneyPenny</span>
+            <span className="neon-text">MoneyPenny</span>
             <br />
             <span className="text-foreground/80">Q¢ Trading Console</span>
           </h1>
@@ -108,11 +106,9 @@ export default function Index() {
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-2xl font-bold mb-8">Supported Chains</h2>
           <div className="flex flex-wrap justify-center gap-3">
-            {["Bitcoin", "Ethereum", "Solana", "Arbitrum", "Base", "Optimism", "Polygon"].map(chain => (
-              <div key={chain} className="glass-card px-6 py-3 glass-hover">
+            {["Bitcoin", "Ethereum", "Solana", "Arbitrum", "Base", "Optimism", "Polygon"].map(chain => <div key={chain} className="glass-card px-6 py-3 glass-hover">
                 <span className="font-medium">{chain}</span>
-              </div>
-            ))}
+              </div>)}
           </div>
         </div>
       </section>
@@ -123,6 +119,5 @@ export default function Index() {
           <p>Aigent MoneyPenny © 2025 • Privacy-first trading with Smart Buckets & Memories</p>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 }
