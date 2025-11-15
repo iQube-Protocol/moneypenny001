@@ -245,14 +245,17 @@ export default function Console() {
           </div>
         </div>
 
-        {/* Section 3: Execution Feed (left) + MoneyPenny (right), with History Below */}
+        {/* Section 3: Execution Feed (left) + Insights (right), with History Below */}
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ExecutionFeed maxItems={15} showSound={true} />
-            <MoneyPennyChat />
+            <ExecutionInsights />
           </div>
           <ExecutionHistoryCompact />
         </div>
+
+        {/* AI Assistant */}
+        <MoneyPennyChat />
       </main>
     </div>
   );
