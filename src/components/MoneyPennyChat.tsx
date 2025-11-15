@@ -25,10 +25,10 @@ export const MoneyPennyChat = () => {
   const { openOverlay, activeOverlay } = useOverlayManager();
 
   const tabs = [
-    { id: 'portfolio', label: 'Portfolio', icon: BarChart3 },
+    { id: 'profile', label: 'Profile', icon: UserCircle },
+    { id: 'metavata', label: 'metaVata', icon: Brain },
     { id: 'intent-capture', label: 'Intent', icon: Target },
     { id: 'live-insights', label: 'Insights', icon: Zap },
-    { id: 'profile', label: 'Profile', icon: UserCircle },
   ] as const;
 
   useEffect(() => {
