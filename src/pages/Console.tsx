@@ -7,12 +7,14 @@ import { LiveMarketFeed } from "@/components/LiveMarketFeed";
 import { useOverlayManager } from "@/hooks/use-overlay-manager";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 export default function Console() {
   const {
     openOverlay
   } = useOverlayManager();
   const [currentStrategy, setCurrentStrategy] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState("chat");
   const handleStrategyUpdate = (strategy: any) => {
     setCurrentStrategy(strategy);
     // Auto-open intent overlay with the strategy
@@ -34,6 +36,14 @@ export default function Console() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <ToggleGroup type="single" value={activeTab} onValueChange={(value) => value && setActiveTab(value)}>
+                <ToggleGroupItem value="chat" aria-label="Chat">
+                  Chat
+                </ToggleGroupItem>
+                <ToggleGroupItem value="market" aria-label="Feed">
+                  Feed
+                </ToggleGroupItem>
+              </ToggleGroup>
               <NotificationCenter />
               <Link to="/profile">
                 <Button variant="outline" size="sm">Profile</Button>
@@ -46,12 +56,7 @@ export default function Console() {
 
       {/* Main Console - Aigent MoneyPenny */}
       <main className="container mx-auto px-6 py-6">
-        <Tabs defaultValue="chat" className="space-y-6">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="chat">AI Chat</TabsTrigger>
-            <TabsTrigger value="market">Market Feed</TabsTrigger>
-          </TabsList>
-          
+        <Tabs value={activeTab} className="space-y-6">
           <TabsContent value="chat" className="space-y-6">
             <MoneyPennyChat />
           </TabsContent>
