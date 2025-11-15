@@ -15,6 +15,7 @@ import { RiskDashboard } from "@/components/RiskDashboard";
 import { PortfolioAnalytics } from "@/components/PortfolioAnalytics";
 import { WalletStatus } from "@/components/WalletStatus";
 import { AdvancedIntentForm } from "@/components/AdvancedIntentForm";
+import { FIOPaymentRequests } from "@/components/FIOPaymentRequests";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -257,6 +258,11 @@ export default function Console() {
         {/* FIO Handle Management */}
         <div className="mt-6">
           <FIOManager />
+        </div>
+
+        {/* FIO Payment Requests */}
+        <div className="mt-6">
+          <FIOPaymentRequests />
         </div>
 
         {/* Risk Dashboard */}
