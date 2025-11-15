@@ -42,8 +42,7 @@ export default function Index() {
           </h1>
 
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            QriptoCENT (Q¢) micro-slippage trading agent. Cross-chain execution with real-time quotes, 
-            intelligent risk controls, and hyper-personalized banking insights.
+            QriptoCENT (Q¢) micro-slippage HFT agent. Cross-chain execution with real-time quotes, intelligent risk controls, and hyper-personalized insights.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8">
