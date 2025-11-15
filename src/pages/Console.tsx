@@ -8,6 +8,7 @@ import { QuotesTable } from "@/components/QuotesTable";
 import { FillsTicker } from "@/components/FillsTicker";
 import { CaptureSparkline } from "@/components/CaptureSparkline";
 import { IntentForm } from "@/components/IntentForm";
+import { ExecutionHistory } from "@/components/ExecutionHistory";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMoneyPenny } from "@/lib/aigent/moneypenny/client";
@@ -232,6 +233,11 @@ export default function Console() {
               timestamp: f.ts,
             }))} />
           </div>
+        </div>
+
+        {/* Execution History */}
+        <div className="mt-6">
+          <ExecutionHistory />
         </div>
       </main>
     </div>
