@@ -4,8 +4,10 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { useMoneyPenny } from '@/lib/aigent/moneypenny/client';
-import { Send, Loader2, Brain } from 'lucide-react';
+import { Send, Loader2, Brain, BarChart3, Target, Zap, UserCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useOverlayManager } from '@/hooks/use-overlay-manager';
+import { cn } from '@/lib/utils';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -20,6 +22,14 @@ export const MoneyPennyChat = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const moneyPenny = useMoneyPenny();
   const { toast } = useToast();
+  const { openOverlay, activeOverlay } = useOverlayManager();
+
+  const tabs = [
+    { id: 'portfolio', label: 'Portfolio', icon: BarChart3 },
+    { id: 'intent-capture', label: 'Intent', icon: Target },
+    { id: 'live-insights', label: 'Insights', icon: Zap },
+    { id: 'profile', label: 'Profile', icon: UserCircle },
+  ] as const;
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -177,79 +187,113 @@ export const MoneyPennyChat = () => {
   };
 
   return (
-    <Card className="flex flex-col h-[600px]">
-      <div className="p-4 border-b">
-        <h3 className="text-lg font-semibold flex items-center gap-2">
-          <Brain className="w-5 h-5 text-primary" />
-          MoneyPenny Agent
-        </h3>
-        <p className="text-sm text-muted-foreground mt-1">
-          AI-powered trading assistant with cross-chain capabilities
-        </p>
-      </div>
-
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        <div className="space-y-4">
-          {messages.length === 0 && (
-            <div className="text-center text-muted-foreground py-12">
-              <Brain className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p className="text-sm">Start a conversation with MoneyPenny</p>
-              <p className="text-xs mt-2">Ask about trades, market insights, or DeFi strategies</p>
-            </div>
-          )}
-          
-          {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                  msg.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted'
-                }`}
-              >
-                <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                <p className="text-xs opacity-70 mt-1">
-                  {msg.timestamp.toLocaleTimeString()}
-                </p>
-              </div>
-            </div>
-          ))}
-          
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-muted rounded-lg px-4 py-2">
-                <Loader2 className="w-4 h-4 animate-spin" />
-              </div>
-            </div>
-          )}
-        </div>
-      </ScrollArea>
-
-      <div className="p-4 border-t">
-        <div className="flex gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask MoneyPenny about trades, quotes, or strategies..."
-            disabled={isLoading}
-          />
-          <Button
-            onClick={handleSend}
-            disabled={isLoading || !input.trim()}
-            size="icon"
-          >
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
+    <div className="relative flex h-[600px]">
+      {/* Vertical Folder Tabs */}
+      <div className="flex flex-col gap-2 py-4 pr-2">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => openOverlay(tab.id)}
+            className={cn(
+              "relative group flex items-center justify-center w-12 h-20 rounded-r-lg transition-all duration-300",
+              "before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-primary before:opacity-0 before:transition-opacity",
+              "hover:bg-card/60 hover:before:opacity-100",
+              activeOverlay === tab.id && "bg-card border-l-2 border-primary before:opacity-100"
             )}
-          </Button>
-        </div>
+            title={tab.label}
+          >
+            <div className="flex flex-col items-center gap-1">
+              <tab.icon className={cn(
+                "h-5 w-5 transition-colors",
+                activeOverlay === tab.id ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+              )} />
+              <span className={cn(
+                "text-[10px] font-medium transition-colors",
+                "[writing-mode:vertical-lr] [text-orientation:mixed]",
+                activeOverlay === tab.id ? "text-primary" : "text-muted-foreground group-hover:text-foreground"
+              )}>
+                {tab.label}
+              </span>
+            </div>
+          </button>
+        ))}
       </div>
-    </Card>
+
+      {/* Chat Card */}
+      <Card className="flex flex-col flex-1">
+        <div className="p-4 border-b">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Brain className="w-5 h-5 text-primary" />
+            Aigent MoneyPenny
+          </h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            AI-powered trading assistant with cross-chain capabilities
+          </p>
+        </div>
+
+        <ScrollArea className="flex-1 p-4" ref={scrollRef}>
+          <div className="space-y-4">
+            {messages.length === 0 && (
+              <div className="text-center text-muted-foreground py-12">
+                <Brain className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p className="text-sm">Start a conversation with MoneyPenny</p>
+                <p className="text-xs mt-2">Ask about trades, market insights, or DeFi strategies</p>
+              </div>
+            )}
+            
+            {messages.map((msg, idx) => (
+              <div
+                key={idx}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+              >
+                <div
+                  className={`max-w-[80%] rounded-lg px-4 py-2 ${
+                    msg.role === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted'
+                  }`}
+                >
+                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    {msg.timestamp.toLocaleTimeString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+            
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-muted rounded-lg px-4 py-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                </div>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+
+        <div className="p-4 border-t">
+          <div className="flex gap-2">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Ask MoneyPenny about trades, quotes, or strategies..."
+              disabled={isLoading}
+            />
+            <Button
+              onClick={handleSend}
+              disabled={isLoading || !input.trim()}
+              size="icon"
+            >
+              {isLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </div>
   );
 };
