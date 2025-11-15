@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -55,6 +55,31 @@ export function AdvancedIntentForm({ availableChains, suggestedStrategy }: Advan
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentIntent, setCurrentIntent] = useState<Intent | null>(null);
+
+  // Load applied banking policy on mount
+  useEffect(() => {
+    const savedPolicy = localStorage.getItem('moneypenny_applied_config');
+    if (savedPolicy) {
+      try {
+        const policy = JSON.parse(savedPolicy);
+        
+        // Pre-fill form with banking recommendations
+        if (policy.min_edge_bps_baseline) {
+          setMinEdgeBps(policy.min_edge_bps_baseline.toString());
+        }
+        if (policy.max_notional_usd_day) {
+          setAmount(policy.max_notional_usd_day.toString());
+        }
+        
+        toast({
+          title: "Policy loaded",
+          description: "Form pre-filled with banking profile recommendations",
+        });
+      } catch (error) {
+        console.error("Failed to parse saved policy:", error);
+      }
+    }
+  }, [toast]);
 
   const validateAndSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

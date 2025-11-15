@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.research-agent]
 verify_jwt = false
+
+[functions.banking-document-parser]
+verify_jwt = true
