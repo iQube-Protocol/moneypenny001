@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.oracle-dex]
 verify_jwt = false
+
+[functions.research-agent]
+verify_jwt = false
