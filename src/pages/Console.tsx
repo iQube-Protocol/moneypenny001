@@ -8,17 +8,16 @@ import { useOverlayManager } from "@/hooks/use-overlay-manager";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 export default function Console() {
-  const { openOverlay } = useOverlayManager();
+  const {
+    openOverlay
+  } = useOverlayManager();
   const [currentStrategy, setCurrentStrategy] = useState<any>(null);
-
   const handleStrategyUpdate = (strategy: any) => {
     setCurrentStrategy(strategy);
     // Auto-open intent overlay with the strategy
     setTimeout(() => openOverlay('intent-capture'), 300);
   };
-
   return <div className="min-h-screen">
       {/* Header */}
       <header className="border-b border-border glass-card">
@@ -31,7 +30,7 @@ export default function Console() {
                 
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Real-time trading console powered by AI
+                Real-time high-frequency trading agent powered by Qripto
               </p>
             </div>
             <div className="flex items-center gap-3">
