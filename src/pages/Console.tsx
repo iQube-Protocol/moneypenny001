@@ -12,6 +12,7 @@ import { ExecutionHistory } from "@/components/ExecutionHistory";
 import { MoneyPennyChat } from "@/components/MoneyPennyChat";
 import { FIOManager } from "@/components/FIOManager";
 import { RiskDashboard } from "@/components/RiskDashboard";
+import { PortfolioAnalytics } from "@/components/PortfolioAnalytics";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -258,6 +259,11 @@ export default function Console() {
         {/* Risk Dashboard */}
         <div className="mt-6">
           <RiskDashboard />
+        </div>
+
+        {/* Portfolio Analytics */}
+        <div className="mt-6">
+          <PortfolioAnalytics />
         </div>
       </main>
     </div>
