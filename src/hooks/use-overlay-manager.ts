@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type OverlayType = 'portfolio' | 'intent-capture' | 'live-insights' | 'profile' | 'metavatar' | null;
+export type OverlayType = 'portfolio' | 'intent-capture' | 'live-insights' | 'profile' | 'metavatar' | 'research' | null;
 
 interface OverlayState {
   activeOverlay: OverlayType;

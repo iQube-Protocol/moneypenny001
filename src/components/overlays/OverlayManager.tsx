@@ -5,6 +5,7 @@ import { IntentCaptureOverlay } from "./IntentCaptureOverlay";
 import { LiveInsightsOverlay } from "./LiveInsightsOverlay";
 import { ProfileOverlay } from "./ProfileOverlay";
 import { MetaVatarOverlay } from "./MetaVatarOverlay";
+import { ResearchOverlay } from "./ResearchOverlay";
 
 interface OverlayManagerProps {
   currentStrategy?: any;
@@ -25,6 +26,8 @@ export function OverlayManager({ currentStrategy }: OverlayManagerProps) {
         return <ProfileOverlay />;
       case 'metavatar':
         return <MetaVatarOverlay />;
+      case 'research':
+        return <ResearchOverlay />;
       default:
         return null;
     }
