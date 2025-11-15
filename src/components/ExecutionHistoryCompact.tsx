@@ -8,7 +8,7 @@ import { Intent, Execution } from "@/lib/aigent/moneypenny/modules/execution";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { RefreshCw, TrendingUp, TrendingDown, Loader2 } from "lucide-react";
+import { RefreshCw, TrendingUp, TrendingDown, Loader2, DollarSign, Target, Award } from "lucide-react";
 
 export function ExecutionHistoryCompact() {
   const moneyPenny = useMoneyPenny();
@@ -18,6 +18,13 @@ export function ExecutionHistoryCompact() {
   const [executions, setExecutions] = useState<Execution[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'intents' | 'executions'>('intents');
+  const [stats, setStats] = useState<{
+    total_fills: number;
+    total_volume_usd: number;
+    avg_capture_bps: number;
+    chains_traded: string[];
+    win_rate: number;
+  } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -40,13 +47,15 @@ export function ExecutionHistoryCompact() {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [intentsData, executionsData] = await Promise.all([
+      const [intentsData, executionsData, statsData] = await Promise.all([
         moneyPenny.execution.listIntents(),
         moneyPenny.execution.listExecutions(20),
+        moneyPenny.execution.getStats('24h'),
       ]);
 
       setIntents(intentsData.slice(0, 10));
       setExecutions(executionsData.slice(0, 10));
+      setStats(statsData);
     } catch (error) {
       console.error('Failed to load execution history:', error);
       toast({
@@ -75,8 +84,42 @@ export function ExecutionHistoryCompact() {
   return (
     <Card className="glass-card p-4">
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <h3 className="text-sm font-semibold">Recent Activity</h3>
+          
+          {/* Performance Stats Inline */}
+          {stats && (
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1.5 px-2 py-1 glass-card">
+                <TrendingUp className="h-3 w-3 text-muted-foreground" />
+                <span className="text-muted-foreground">Fills:</span>
+                <span className="font-bold">{stats.total_fills}</span>
+              </div>
+              
+              <div className="flex items-center gap-1.5 px-2 py-1 glass-card">
+                <DollarSign className="h-3 w-3 text-muted-foreground" />
+                <span className="text-muted-foreground">Vol:</span>
+                <span className="font-bold">${stats.total_volume_usd.toFixed(2)}</span>
+              </div>
+              
+              <div className="flex items-center gap-1.5 px-2 py-1 glass-card">
+                <Target className="h-3 w-3 text-muted-foreground" />
+                <span className="text-muted-foreground">Avg:</span>
+                <span className={`font-bold ${stats.avg_capture_bps > 0 ? 'text-success' : 'text-destructive'}`}>
+                  {stats.avg_capture_bps.toFixed(2)} bps
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-1.5 px-2 py-1 glass-card">
+                <Award className="h-3 w-3 text-muted-foreground" />
+                <span className="text-muted-foreground">Win:</span>
+                <span className="font-bold">{(stats.win_rate * 100).toFixed(1)}%</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
           <div className="flex gap-1">
             <Button
               variant={activeTab === 'intents' ? 'default' : 'ghost'}
@@ -95,20 +138,21 @@ export function ExecutionHistoryCompact() {
               Fills ({executions.length})
             </Button>
           </div>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={loadData}
+            disabled={loading}
+            className="h-7 w-7 p-0"
+          >
+            {loading ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3 w-3" />
+            )}
+          </Button>
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={loadData}
-          disabled={loading}
-          className="h-7 w-7 p-0"
-        >
-          {loading ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <RefreshCw className="h-3 w-3" />
-          )}
-        </Button>
       </div>
 
       <ScrollArea className="w-full">
