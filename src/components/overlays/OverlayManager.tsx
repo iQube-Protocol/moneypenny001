@@ -4,6 +4,7 @@ import { PortfolioOverlay } from "./PortfolioOverlay";
 import { IntentCaptureOverlay } from "./IntentCaptureOverlay";
 import { LiveInsightsOverlay } from "./LiveInsightsOverlay";
 import { ProfileOverlay } from "./ProfileOverlay";
+import { MetaVatarOverlay } from "./MetaVatarOverlay";
 
 export function OverlayManager() {
   const { activeOverlay, closeOverlay } = useOverlayManager();
@@ -19,7 +20,7 @@ export function OverlayManager() {
       case 'profile':
         return <ProfileOverlay />;
       case 'metavatar':
-        return <div className="space-y-4 h-full overflow-y-auto"><h2 className="text-2xl font-bold neon-text">MetaVatar</h2><p className="text-sm text-muted-foreground mt-1">AI-powered avatar interface</p></div>;
+        return <MetaVatarOverlay />;
       default:
         return null;
     }
