@@ -24,6 +24,46 @@ interface IQubeRiskTrust {
   tags: string[];
 }
 
+interface Strategy {
+  action: 'buy' | 'sell' | 'hold';
+  instrument: string;
+  chain: string;
+  size_qc: number;
+  min_edge_bps: number;
+  rationale: string;
+  confidence: number;
+}
+
+function generateStrategy(topic: string, results: TavilyResult[], summary: string): Strategy {
+  // Simple heuristic strategy generation
+  const avgScore = results.reduce((sum, c) => sum + c.score, 0) / results.length;
+  const content = results.map(r => r.content.toLowerCase()).join(' ');
+  
+  // Detect bullish/bearish signals
+  const bullishWords = ['bullish', 'buy', 'uptrend', 'positive', 'growth', 'rally'];
+  const bearishWords = ['bearish', 'sell', 'downtrend', 'negative', 'decline', 'drop'];
+  
+  const bullishCount = bullishWords.filter(w => content.includes(w)).length;
+  const bearishCount = bearishWords.filter(w => content.includes(w)).length;
+  
+  let action: Strategy['action'] = 'hold';
+  if (bullishCount > bearishCount + 1) action = 'buy';
+  else if (bearishCount > bullishCount + 1) action = 'sell';
+  
+  // Extract instrument from topic
+  const instrument = topic.match(/\b(ETH|BTC|SOL|MATIC|ARB)\b/i)?.[0]?.toUpperCase() || 'ETH';
+  
+  return {
+    action,
+    instrument: `${instrument}-USDC`,
+    chain: instrument === 'BTC' ? 'btc' : instrument === 'SOL' ? 'sol' : 'eth',
+    size_qc: action === 'hold' ? 0 : Math.min(1000, Math.round(avgScore * 2000)),
+    min_edge_bps: Math.round(20 + (1 - avgScore) * 30),
+    rationale: `Based on ${results.length} sources: ${bullishCount} bullish, ${bearishCount} bearish signals`,
+    confidence: Math.round(avgScore * 100),
+  };
+}
+
 function generateRiskTrustScore(
   citations: TavilyResult[],
   hasPriorHistory: boolean
@@ -136,6 +176,11 @@ serve(async (req) => {
     
     console.log('Research request:', { topic, scope, maxResults });
     
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
     // Search Tavily
     const results = await searchTavily(topic, maxResults);
     
@@ -163,7 +208,19 @@ serve(async (req) => {
     }));
     
     // Generate risk/trust scores
-    const riskTrust = generateRiskTrustScore(results, false); // TODO: check prior history
+    const riskTrust = generateRiskTrustScore(results, false);
+    
+    // Generate strategy recommendation
+    const strategy = generateStrategy(topic, results, summary);
+    
+    // Fetch previous strategy for comparison
+    const { data: prevStrategyData } = await supabase
+      .from('cache_store')
+      .select('value')
+      .eq('key', `strategy:${scope || 'default'}:latest`)
+      .single();
+    
+    const previousStrategy = prevStrategyData ? JSON.parse(prevStrategyData.value) : null;
     
     // Build research memo
     const memo = {
@@ -175,20 +232,25 @@ serve(async (req) => {
       citations,
       created_at: new Date().toISOString(),
       ...riskTrust,
+      strategy,
+      previousStrategy,
     };
     
-    // Store in memories (using Supabase cache_store as simple storage)
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Store memo and latest strategy
+    await supabase.from('cache_store').upsert([
+      {
+        key: `research:${scope || 'default'}:${memo.id}`,
+        value: JSON.stringify(memo),
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      },
+      {
+        key: `strategy:${scope || 'default'}:latest`,
+        value: JSON.stringify(strategy),
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+      },
+    ]);
     
-    await supabase.from('cache_store').upsert({
-      key: `research:${scope}:${memo.id}`,
-      value: JSON.stringify(memo),
-      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24h
-    });
-    
-    console.log('Research memo created:', memo.id);
+    console.log('Research memo created:', memo.id, 'Strategy:', strategy.action);
     
     return new Response(
       JSON.stringify({ memo, cached: false }),

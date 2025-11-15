@@ -31,18 +31,20 @@ type AdvancedIntentInput = z.infer<typeof advancedIntentSchema>;
 
 interface AdvancedIntentFormProps {
   availableChains: string[];
+  suggestedStrategy?: any;
 }
 
-export function AdvancedIntentForm({ availableChains }: AdvancedIntentFormProps) {
+export function AdvancedIntentForm({ availableChains, suggestedStrategy }: AdvancedIntentFormProps) {
   const moneyPenny = useMoneyPenny();
   const { toast } = useToast();
 
-  const [selectedChain, setSelectedChain] = useState<string>(availableChains[0] || "eth");
-  const [side, setSide] = useState<"BUY" | "SELL">("BUY");
+  // Apply suggested strategy if provided
+  const [selectedChain, setSelectedChain] = useState<string>(suggestedStrategy?.chain || availableChains[0] || "eth");
+  const [side, setSide] = useState<"BUY" | "SELL">(suggestedStrategy?.action === 'buy' ? 'BUY' : suggestedStrategy?.action === 'sell' ? 'SELL' : 'BUY');
   const [orderType, setOrderType] = useState<"MARKET" | "LIMIT">("MARKET");
-  const [amount, setAmount] = useState<string>("100");
+  const [amount, setAmount] = useState<string>(suggestedStrategy?.size_qc?.toString() || "100");
   const [limitPrice, setLimitPrice] = useState<string>("");
-  const [minEdgeBps, setMinEdgeBps] = useState<string>("1.0");
+  const [minEdgeBps, setMinEdgeBps] = useState<string>(suggestedStrategy?.min_edge_bps?.toString() || "1.0");
   const [maxSlippageBps, setMaxSlippageBps] = useState<string>("5.0");
   const [timeInForce, setTimeInForce] = useState<"GTC" | "IOC" | "FOK" | "DAY">("GTC");
   
