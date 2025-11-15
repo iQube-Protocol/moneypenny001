@@ -209,13 +209,26 @@ export default function Console() {
               minEdgeBps={1.0}
               liveEdgeBps={1.42}
             />
-            <QuotesTable quotes={quotes} />
+            <QuotesTable quotes={quotes.map(q => ({
+              chain: q.chain,
+              edgeBps: q.edge_bps,
+              price: q.price_usdc,
+              qty: q.qty_qc,
+              timestamp: q.ts,
+            }))} />
           </div>
 
           {/* Right Column */}
           <div className="space-y-6">
             <CaptureSparkline data={captureData} totalQc={totalQc} />
-            <FillsTicker fills={fills} />
+            <FillsTicker fills={fills.map(f => ({
+              side: f.side,
+              chain: f.chain,
+              qty: f.qty_qct,
+              price: f.price_usdc,
+              captureBps: f.capture_bps,
+              timestamp: f.ts,
+            }))} />
           </div>
         </div>
       </main>
