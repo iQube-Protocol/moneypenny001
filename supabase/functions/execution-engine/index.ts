@@ -329,6 +329,27 @@ async function simulateExecution(supabaseClient: any, intent: any) {
       .update({ status: "filled" })
       .eq("intent_id", intent.intent_id);
 
+    // Broadcast execution fill to all connected clients
+    await supabaseClient.channel('notifications').send({
+      type: 'broadcast',
+      event: 'notification',
+      payload: {
+        type: 'execution_fill',
+        action: 'updated',
+        data: {
+          intent_id: intent.intent_id,
+          execution_id: execution.execution_id,
+          qty_filled: execution.qty_filled,
+          asset: 'QC',
+          chain: execution.chain,
+          avg_price: execution.avg_price,
+          capture_bps: execution.capture_bps,
+          tx_hash: execution.tx_hash,
+        },
+        timestamp: new Date().toISOString(),
+      },
+    });
+
     console.log(`Execution completed for intent ${intent.intent_id}`);
   } catch (error) {
     console.error("Simulation error:", error);
