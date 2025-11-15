@@ -20,6 +20,7 @@ import { X402CustodyDashboard } from "@/components/X402CustodyDashboard";
 import { NotificationStatus } from "@/components/NotificationStatus";
 import { PersonaManager } from "@/components/PersonaManager";
 import { TransactionHistory } from "@/components/TransactionHistory";
+import { FeeEstimator } from "@/components/FeeEstimator";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -283,6 +284,11 @@ export default function Console() {
         {/* Transaction History */}
         <div className="mt-6">
           <TransactionHistory />
+        </div>
+
+        {/* Fee Estimator */}
+        <div className="mt-6">
+          <FeeEstimator />
         </div>
 
         {/* Risk Dashboard */}
