@@ -204,27 +204,27 @@ export default function Console() {
           </div>
         </div>
 
-        {/* Section 1: Edge Gauge, Wallet Status, and Quotes */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <EdgeGauge
-              floorBps={0.65}
-              minEdgeBps={1.0}
-              liveEdgeBps={1.42}
-            />
-          </div>
-          <div>
+        {/* Section 1: Edge Gauge + Wallet Status + Live Quotes */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="flex-1">
+              <EdgeGauge
+                floorBps={0.65}
+                minEdgeBps={1.0}
+                liveEdgeBps={1.42}
+              />
+            </div>
             <WalletStatus />
           </div>
-        </div>
 
-        <QuotesTable quotes={quotes.map(q => ({
-          chain: q.chain,
-          edgeBps: q.edge_bps,
-          price: q.price_usdc,
-          qty: q.qty_qc,
-          timestamp: q.ts,
-        }))} />
+          <QuotesTable quotes={quotes.map(q => ({
+            chain: q.chain,
+            edgeBps: q.edge_bps,
+            price: q.price_usdc,
+            qty: q.qty_qc,
+            timestamp: q.ts,
+          }))} />
+        </div>
 
         {/* Section 2: Advanced Trading Intent + Capture & Fills */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

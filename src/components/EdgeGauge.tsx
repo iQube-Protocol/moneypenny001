@@ -13,49 +13,32 @@ export function EdgeGauge({ floorBps, minEdgeBps, liveEdgeBps }: EdgeGaugeProps)
   const livePercent = (liveEdgeBps / maxBps) * 100;
 
   return (
-    <Card className="glass-card p-6">
-      <h3 className="text-sm font-medium text-muted-foreground mb-4">Edge Gauge</h3>
+    <div className="flex items-center gap-4 glass-card p-3">
+      <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Edge Gauge</span>
       
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">Floor</span>
-            <span className="font-mono data-positive">{floorBps.toFixed(2)} bps</span>
-          </div>
-          <div className="h-2 bg-secondary rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-muted-foreground/50 transition-all duration-500"
-              style={{ width: `${floorPercent}%` }}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">Min Edge</span>
-            <span className="font-mono text-warning">{minEdgeBps.toFixed(2)} bps</span>
-          </div>
-          <div className="h-2 bg-secondary rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-warning transition-all duration-500"
-              style={{ width: `${minPercent}%` }}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">Live Edge</span>
-            <span className="font-mono neon-text">{liveEdgeBps.toFixed(2)} bps</span>
-          </div>
-          <div className="h-2 bg-secondary rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-primary shadow-lg shadow-primary/50 transition-all duration-500 animate-pulse-slow"
-              style={{ width: `${livePercent}%` }}
-            />
-          </div>
-        </div>
+      <div className="flex-1 relative h-3 bg-secondary rounded-full overflow-hidden">
+        {/* Floor marker */}
+        <div 
+          className="absolute top-0 bottom-0 w-0.5 bg-muted-foreground/50 z-10"
+          style={{ left: `${floorPercent}%` }}
+        />
+        {/* Min Edge marker */}
+        <div 
+          className="absolute top-0 bottom-0 w-0.5 bg-warning z-10"
+          style={{ left: `${minPercent}%` }}
+        />
+        {/* Live Edge bar */}
+        <div 
+          className="h-full bg-primary shadow-lg shadow-primary/50 transition-all duration-500 animate-pulse-slow"
+          style={{ width: `${livePercent}%` }}
+        />
       </div>
-    </Card>
+
+      <div className="flex items-center gap-3 text-xs font-mono">
+        <span className="text-muted-foreground/50">{floorBps.toFixed(2)}</span>
+        <span className="text-warning">{minEdgeBps.toFixed(2)}</span>
+        <span className="neon-text font-semibold">{liveEdgeBps.toFixed(2)} bps</span>
+      </div>
+    </div>
   );
 }
