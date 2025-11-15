@@ -13,6 +13,7 @@ import { MoneyPennyChat } from "@/components/MoneyPennyChat";
 import { FIOManager } from "@/components/FIOManager";
 import { RiskDashboard } from "@/components/RiskDashboard";
 import { PortfolioAnalytics } from "@/components/PortfolioAnalytics";
+import { WalletStatus } from "@/components/WalletStatus";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -228,6 +229,7 @@ export default function Console() {
 
           {/* Right Column */}
           <div className="space-y-6">
+            <WalletStatus />
             <IntentForm availableChains={selectedChains} />
             <CaptureSparkline data={captureData} totalQc={totalQc} />
             <FillsTicker fills={fills.map(f => ({
