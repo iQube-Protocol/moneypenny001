@@ -10,14 +10,17 @@ export function OverlayManager() {
 
   const renderOverlay = () => {
     switch (activeOverlay) {
-      case 'portfolio':
-        return <PortfolioOverlay />;
+      case 'profile':
+        return <ProfileOverlay />;
+      case 'metavata':
+        return <div className="text-center py-8">
+          <h2 className="text-2xl font-bold neon-text">metaVata</h2>
+          <p className="text-muted-foreground mt-2">Ready for your embed code</p>
+        </div>;
       case 'intent-capture':
         return <IntentCaptureOverlay />;
       case 'live-insights':
         return <LiveInsightsOverlay />;
-      case 'profile':
-        return <ProfileOverlay />;
       default:
         return null;
     }
