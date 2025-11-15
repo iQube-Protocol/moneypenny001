@@ -24,6 +24,7 @@ import { FeeEstimator } from "@/components/FeeEstimator";
 import { StrategyBuilder } from "@/components/StrategyBuilder";
 import { LiquidityAnalytics } from "@/components/LiquidityAnalytics";
 import { AITradeAdvisor } from "@/components/AITradeAdvisor";
+import { ArbitrageDetector } from "@/components/ArbitrageDetector";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -312,6 +313,11 @@ export default function Console() {
         {/* AI Trade Advisor */}
         <div className="mt-6">
           <AITradeAdvisor />
+        </div>
+
+        {/* Arbitrage Detector */}
+        <div className="mt-6">
+          <ArbitrageDetector />
         </div>
 
         {/* Portfolio Analytics */}

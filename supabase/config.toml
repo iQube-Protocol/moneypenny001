@@ -2,3 +2,12 @@ project_id = "csmytlhrdcnjzqrmimnw"
 
 [functions.moneypenny-chat]
 verify_jwt = false
+
+[functions.execution-engine]
+verify_jwt = true
+
+[functions.ai-trade-advisor]
+verify_jwt = false
+
+[functions.arbitrage-scanner]
+verify_jwt = false
