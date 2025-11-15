@@ -10,24 +10,35 @@ import { AgentiQClient } from '../core/client';
 import { AgentiQConfig } from '../core/types';
 import { TavilyAdapter } from '../core/adapters/tavily';
 import { RedisAdapter } from '../core/adapters/redis';
+import { AuthModule } from './modules/auth';
+import { X402Module } from './modules/x402';
+import { FIOModule } from './modules/fio';
+import { StorageModule } from './modules/storage';
+import { AggregatesModule } from './modules/aggregates';
+import { MemoriesModule } from './modules/memories';
+import { AnchorsModule } from './modules/anchors';
+import { AgentsModule } from './modules/agents';
+import { QuotesModule } from './modules/quotes';
+import { ExecutionModule } from './modules/execution';
+import { OraclesModule } from './modules/oracles';
 
 export class MoneyPennyClient extends AgentiQClient {
   // External adapters (optional)
   public tavily: TavilyAdapter | null = null;
   public redis: RedisAdapter | null = null;
 
-  // Module placeholders (will be implemented in Phase 3)
-  public auth: any = null;
-  public x402: any = null;
-  public fio: any = null;
-  public storage: any = null;
-  public aggregates: any = null;
-  public memories: any = null;
-  public quotes: any = null;
-  public execution: any = null;
-  public oracles: any = null;
-  public anchors: any = null;
-  public agents: any = null;
+  // Modules (Phase 3)
+  public auth: AuthModule;
+  public x402: X402Module;
+  public fio: FIOModule;
+  public storage: StorageModule;
+  public aggregates: AggregatesModule;
+  public memories: MemoriesModule;
+  public quotes: QuotesModule;
+  public execution: ExecutionModule;
+  public oracles: OraclesModule;
+  public anchors: AnchorsModule;
+  public agents: AgentsModule;
 
   constructor(config: AgentiQConfig, queryClient: QueryClient) {
     super(config, queryClient);
@@ -54,13 +65,26 @@ export class MoneyPennyClient extends AgentiQClient {
       }
     }
 
-    // Modules will be initialized in Phase 3
+    // Initialize all modules (Phase 3)
+    this.auth = new AuthModule(this);
+    this.x402 = new X402Module(this);
+    this.fio = new FIOModule(this);
+    this.storage = new StorageModule(this);
+    this.aggregates = new AggregatesModule(this);
+    this.memories = new MemoriesModule(this);
+    this.anchors = new AnchorsModule(this);
+    this.agents = new AgentsModule(this);
+    this.quotes = new QuotesModule(this);
+    this.execution = new ExecutionModule(this);
+    this.oracles = new OraclesModule(this);
+
     console.log('MoneyPenny client initialized', {
       agentClass: config.agentClass,
       tenantId: config.tenantId,
       enableA2A: config.enableA2A,
       hasTavily: !!this.tavily,
       hasRedis: !!this.redis,
+      modulesLoaded: 11,
     });
   }
 
