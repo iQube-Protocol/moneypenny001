@@ -31,9 +31,6 @@ export function ResearchPanel({ onStrategyUpdate }: ResearchPanelProps) {
       if (error) throw error;
       if (data?.memo) {
         setMemo(data.memo);
-        if (data.memo.strategy && onStrategyUpdate) {
-          onStrategyUpdate(data.memo.strategy);
-        }
         toast({
           title: "Research Complete",
           description: `Strategy: ${data.memo.strategy?.action || 'hold'}`,
