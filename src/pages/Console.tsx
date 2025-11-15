@@ -26,6 +26,7 @@ import { LiquidityAnalytics } from "@/components/LiquidityAnalytics";
 import { AITradeAdvisor } from "@/components/AITradeAdvisor";
 import { ArbitrageDetector } from "@/components/ArbitrageDetector";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { ExecutionFeed } from "@/components/ExecutionFeed";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMoneyPenny } from "@/lib/aigent/moneypenny/client";
@@ -255,9 +256,10 @@ export default function Console() {
           </div>
         </div>
 
-        {/* Execution History */}
-        <div className="mt-6">
+        {/* Execution History and Live Feed */}
+        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ExecutionHistory />
+          <ExecutionFeed maxItems={15} showSound={true} />
         </div>
 
         {/* MoneyPenny Chat */}
