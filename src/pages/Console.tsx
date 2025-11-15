@@ -4,10 +4,8 @@ import { MoneyPennyChat } from "@/components/MoneyPennyChat";
 import { OverlayManager } from "@/components/overlays/OverlayManager";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { Link } from "react-router-dom";
-
 export default function Console() {
-  return (
-    <div className="min-h-screen">
+  return <div className="min-h-screen">
       {/* Header */}
       <header className="border-b border-border glass-card">
         <div className="container mx-auto px-6 py-4">
@@ -16,7 +14,7 @@ export default function Console() {
               <h1 className="text-2xl font-bold">
                 <span className="text-success">MoneyPenny</span>{" "}
                 <span className="neon-text">Q¢ HFT Aigent</span>{" "}
-                <span className="neon-text">Console</span>
+                
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
                 Real-time trading console powered by AI
@@ -40,6 +38,5 @@ export default function Console() {
 
       {/* Overlay Manager */}
       <OverlayManager />
-    </div>
-  );
+    </div>;
 }
