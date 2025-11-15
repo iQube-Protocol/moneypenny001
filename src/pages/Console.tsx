@@ -5,6 +5,7 @@ import { OverlayManager } from "@/components/overlays/OverlayManager";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { LivePriceTicker } from "@/components/LivePriceTicker";
 import { LiveDexFeed } from "@/components/LiveDexFeed";
+import { ResearchPanel } from "@/components/ResearchPanel";
 import { Link } from "react-router-dom";
 export default function Console() {
   return <div className="min-h-screen">
@@ -43,8 +44,15 @@ export default function Console() {
             <LiveDexFeed />
           </div>
         </div>
-        
-        <MoneyPennyChat />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="lg:col-span-2">
+            <MoneyPennyChat />
+          </div>
+          <div>
+            <ResearchPanel />
+          </div>
+        </div>
       </main>
 
       {/* Overlay Manager */}
