@@ -38,7 +38,7 @@ export default function Index() {
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
             <span className="neon-text">MoneyPenny</span>
             <br />
-            <span className="text-foreground/80">Q¢ Trading Console</span>
+            <span className="text-foreground/80">Q¢ HFT Aigent</span>
           </h1>
 
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
