@@ -8,7 +8,6 @@ import { QuotesTable } from "@/components/QuotesTable";
 import { FillsTicker } from "@/components/FillsTicker";
 import { CaptureSparkline } from "@/components/CaptureSparkline";
 import { ExecutionHistoryCompact } from "@/components/ExecutionHistoryCompact";
-import { ExecutionInsights } from "@/components/ExecutionInsights";
 import { ExecutionFeed } from "@/components/ExecutionFeed";
 import { MoneyPennyChat } from "@/components/MoneyPennyChat";
 import { WalletStatus } from "@/components/WalletStatus";
@@ -245,11 +244,11 @@ export default function Console() {
           </div>
         </div>
 
-        {/* Section 3: Execution Feed (left) + Insights (right), with History Below */}
+        {/* Section 3: Execution Feed (left) + Empty (right), with History Below */}
         <div className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ExecutionFeed maxItems={15} showSound={true} />
-            <ExecutionInsights />
+            <div></div>
           </div>
           <ExecutionHistoryCompact />
         </div>
