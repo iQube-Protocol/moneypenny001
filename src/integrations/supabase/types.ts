@@ -14,7 +14,119 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      trading_executions: {
+        Row: {
+          avg_price: number
+          capture_bps: number
+          chain: string
+          dex: string | null
+          execution_id: string
+          gas_used: number | null
+          intent_id: string
+          qty_filled: number
+          side: string
+          status: string
+          timestamp: string
+          tx_hash: string | null
+          user_id: string | null
+        }
+        Insert: {
+          avg_price: number
+          capture_bps: number
+          chain: string
+          dex?: string | null
+          execution_id?: string
+          gas_used?: number | null
+          intent_id: string
+          qty_filled: number
+          side: string
+          status?: string
+          timestamp?: string
+          tx_hash?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          avg_price?: number
+          capture_bps?: number
+          chain?: string
+          dex?: string | null
+          execution_id?: string
+          gas_used?: number | null
+          intent_id?: string
+          qty_filled?: number
+          side?: string
+          status?: string
+          timestamp?: string
+          tx_hash?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trading_executions_intent_id_fkey"
+            columns: ["intent_id"]
+            isOneToOne: false
+            referencedRelation: "trading_intents"
+            referencedColumns: ["intent_id"]
+          },
+        ]
+      }
+      trading_intents: {
+        Row: {
+          amount_qc: number
+          chain: string
+          created_at: string
+          expires_at: string
+          intent_id: string
+          limit_price: number | null
+          max_slippage_bps: number
+          min_edge_bps: number
+          order_type: string
+          side: string
+          status: string
+          stop_loss: number | null
+          take_profit: number | null
+          time_in_force: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          amount_qc: number
+          chain: string
+          created_at?: string
+          expires_at?: string
+          intent_id?: string
+          limit_price?: number | null
+          max_slippage_bps: number
+          min_edge_bps: number
+          order_type?: string
+          side: string
+          status?: string
+          stop_loss?: number | null
+          take_profit?: number | null
+          time_in_force?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount_qc?: number
+          chain?: string
+          created_at?: string
+          expires_at?: string
+          intent_id?: string
+          limit_price?: number | null
+          max_slippage_bps?: number
+          min_edge_bps?: number
+          order_type?: string
+          side?: string
+          status?: string
+          stop_loss?: number | null
+          take_profit?: number | null
+          time_in_force?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
