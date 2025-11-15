@@ -3,12 +3,11 @@ import { WalletDrawer } from "@/components/WalletDrawer";
 import { MoneyPennyChat } from "@/components/MoneyPennyChat";
 import { OverlayManager } from "@/components/overlays/OverlayManager";
 import { NotificationCenter } from "@/components/NotificationCenter";
-import { LivePriceTicker } from "@/components/LivePriceTicker";
-import { LiveDexFeed } from "@/components/LiveDexFeed";
-import { ResearchPanel } from "@/components/ResearchPanel";
+import { LiveMarketFeed } from "@/components/LiveMarketFeed";
 import { useOverlayManager } from "@/hooks/use-overlay-manager";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function Console() {
   const { openOverlay } = useOverlayManager();
@@ -48,9 +47,20 @@ export default function Console() {
 
       {/* Main Console - Aigent MoneyPenny */}
       <main className="container mx-auto px-6 py-6">
-        <div className="grid grid-cols-1 gap-6 mb-6">
-          <MoneyPennyChat />
-        </div>
+        <Tabs defaultValue="chat" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="chat">AI Chat</TabsTrigger>
+            <TabsTrigger value="market">Market Feed</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="chat" className="space-y-6">
+            <MoneyPennyChat />
+          </TabsContent>
+          
+          <TabsContent value="market" className="space-y-6">
+            <LiveMarketFeed />
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Overlay Manager */}
