@@ -7,6 +7,7 @@ import { EdgeGauge } from "@/components/EdgeGauge";
 import { QuotesTable } from "@/components/QuotesTable";
 import { FillsTicker } from "@/components/FillsTicker";
 import { CaptureSparkline } from "@/components/CaptureSparkline";
+import { IntentForm } from "@/components/IntentForm";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMoneyPenny } from "@/lib/aigent/moneypenny/client";
@@ -220,6 +221,7 @@ export default function Console() {
 
           {/* Right Column */}
           <div className="space-y-6">
+            <IntentForm availableChains={selectedChains} />
             <CaptureSparkline data={captureData} totalQc={totalQc} />
             <FillsTicker fills={fills.map(f => ({
               side: f.side,
