@@ -28,7 +28,7 @@ export function OverlayManager() {
       <SheetOverlay className="bg-transparent" />
       <SheetContent 
         side="left" 
-        className="w-[calc(100vw-14rem)] left-14 h-[600px] top-auto bottom-[4.5rem] bg-background/40 backdrop-blur-md border-r border-primary/20 p-6"
+        className="left-14 right-0 w-auto h-[600px] top-auto bottom-[4.5rem] bg-background/40 backdrop-blur-md border-r border-primary/20 p-6"
       >
         {renderOverlay()}
       </SheetContent>
