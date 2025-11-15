@@ -1,10 +1,32 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Sparkles, TrendingUp, Shield, Zap } from "lucide-react";
+import { WalletDrawer } from "@/components/WalletDrawer";
 
 export default function Index() {
   return (
     <div className="min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="border-b border-border glass-card">
+        <div className="container mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-6 w-6 text-primary" />
+              <span className="text-lg font-bold">Aigent MoneyPenny</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link to="/console">
+                <Button variant="outline" size="sm">Console</Button>
+              </Link>
+              <Link to="/profile">
+                <Button variant="outline" size="sm">Profile</Button>
+              </Link>
+              <WalletDrawer />
+            </div>
+          </div>
+        </div>
+      </header>
+
       {/* Hero Section */}
       <section className="flex-1 flex items-center justify-center px-6 py-20">
         <div className="max-w-4xl mx-auto text-center space-y-8">
