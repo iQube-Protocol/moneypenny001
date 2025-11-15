@@ -188,9 +188,9 @@ export default function Console() {
       </header>
 
       {/* Main Console */}
-      <main className="container mx-auto px-6 py-6">
+      <main className="container mx-auto px-6 py-6 space-y-6">
         {/* Chain Selector */}
-        <div className="mb-6 glass-card p-4">
+        <div className="glass-card p-4">
           <h3 className="text-sm font-medium text-muted-foreground mb-3">Chain Portfolio</h3>
           <div className="flex flex-wrap gap-2">
             {chains.map(chain => (
@@ -204,27 +204,34 @@ export default function Console() {
           </div>
         </div>
 
+        {/* Section 1: Edge Gauge, Wallet Status, and Quotes */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2">
             <EdgeGauge
               floorBps={0.65}
               minEdgeBps={1.0}
               liveEdgeBps={1.42}
             />
-            <QuotesTable quotes={quotes.map(q => ({
-              chain: q.chain,
-              edgeBps: q.edge_bps,
-              price: q.price_usdc,
-              qty: q.qty_qc,
-              timestamp: q.ts,
-            }))} />
           </div>
-
-          {/* Right Column */}
-          <div className="space-y-6">
+          <div>
             <WalletStatus />
+          </div>
+        </div>
+
+        <QuotesTable quotes={quotes.map(q => ({
+          chain: q.chain,
+          edgeBps: q.edge_bps,
+          price: q.price_usdc,
+          qty: q.qty_qc,
+          timestamp: q.ts,
+        }))} />
+
+        {/* Section 2: Advanced Trading Intent + Capture & Fills */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
             <AdvancedIntentForm availableChains={selectedChains} />
+          </div>
+          <div className="space-y-6">
             <CaptureSparkline data={captureData} totalQc={totalQc} />
             <FillsTicker fills={fills.map(f => ({
               side: f.side,
@@ -237,16 +244,14 @@ export default function Console() {
           </div>
         </div>
 
-        {/* Execution History and Live Feed */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Section 3: Execution History and Live Feed */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <ExecutionHistory />
           <ExecutionFeed maxItems={15} showSound={true} />
         </div>
 
         {/* AI Assistant */}
-        <div className="mt-6">
-          <MoneyPennyChat />
-        </div>
+        <MoneyPennyChat />
       </main>
     </div>
   );
