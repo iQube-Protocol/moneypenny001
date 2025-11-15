@@ -31,7 +31,7 @@ export default function Index() {
           <div className="inline-block">
             <div className="flex items-center gap-2 px-4 py-2 glass-card rounded-full mb-6">
               <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm">Powered by AgentiQ & DiDQube</span>
+              <span className="text-sm">Powered by AgentiQ & Qripto</span>
             </div>
           </div>
 
