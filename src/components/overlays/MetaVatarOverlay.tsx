@@ -1,96 +1,72 @@
-import { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, ExternalLink, RefreshCw } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 export function MetaVatarOverlay() {
-  const [error, setError] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-
-  const initializeAgent = () => {
-    console.log('[MetaVatar] Initializing D-ID agent...');
-    
-    const container = document.getElementById('did-agent-container');
-    if (!container) {
-      console.error('[MetaVatar] Container not found');
-      setError(true);
-      return;
-    }
-
-    // Clear any existing content
-    container.innerHTML = '';
-
-    // Get credentials from environment
-    const clientKey = import.meta.env.VITE_DID_CLIENT_KEY || 'Z29vZ2xlLW9hdXRoMnwxMDcyNjU3ODI2NjQ5ODgyODU4MDk6YkoxSDdROEp5S2Q1Mk1CbEx0ODE2';
-    const agentId = import.meta.env.VITE_DID_AGENT_ID || 'v2_agt_dY78cKv2';
-
-    // Create script element with D-ID v1 loader
-    const script = document.createElement('script');
-    script.src = 'https://agent.d-id.com/v1/index.js';
-    script.type = 'module';
-    script.setAttribute('data-name', 'did-agent');
-    script.setAttribute('data-mode', 'embed');
-    script.setAttribute('data-client-key', clientKey);
-    script.setAttribute('data-agent-id', agentId);
-    script.setAttribute('data-monitor', 'false');
-    script.setAttribute('data-container', 'did-agent-container');
-
-    console.log('[MetaVatar] Appending script to container');
-
-    // Set up timeout to detect mount failure
-    const mountTimeout = setTimeout(() => {
-      console.error('[MetaVatar] Script mount timeout after 5s');
-      if (retryCount < 1) {
-        console.warn('[MetaVatar] Retrying initialization...');
-        setRetryCount(prev => prev + 1);
-        container.removeChild(script);
-        initializeAgent();
-      } else {
-        console.error('[MetaVatar] Max retries reached');
-        setError(true);
-      }
-    }, 5000);
-
-    script.addEventListener('load', () => {
-      clearTimeout(mountTimeout);
-      console.log('[MetaVatar] Script loaded successfully');
-    });
-
-    script.addEventListener('error', (e) => {
-      clearTimeout(mountTimeout);
-      console.error('[MetaVatar] Script load error:', e);
-      if (retryCount < 1) {
-        console.warn('[MetaVatar] Retrying after error...');
-        setRetryCount(prev => prev + 1);
-        initializeAgent();
-      } else {
-        setError(true);
-      }
-    });
-
-    container.appendChild(script);
-  };
+  const containerRef = useRef<HTMLDivElement>(null);
+  const scriptRef = useRef<HTMLScriptElement | null>(null);
+  const containerIdRef = useRef(`did-avatar-container-${Math.random().toString(36).slice(2)}`);
 
   useEffect(() => {
-    initializeAgent();
+    const init = () => {
+      const containerId = containerIdRef.current = `did-avatar-container-${Math.random().toString(36).slice(2)}`;
+
+      // Remove any previously injected D-ID artifacts
+      document.querySelectorAll('script[src*="agent.d-id.com"]').forEach((s) => s.remove());
+      document.querySelectorAll('[id^="did-avatar-container-"]').forEach((el) => {
+        if (el instanceof HTMLElement) el.innerHTML = '';
+      });
+
+      // Ensure container has the unique id
+      if (containerRef.current) {
+        containerRef.current.id = containerId;
+        containerRef.current.innerHTML = '';
+      }
+
+      // Get credentials from environment
+      const clientKey = import.meta.env.VITE_DID_CLIENT_KEY || 'Z29vZ2xlLW9hdXRoMnwxMDcyNjU3ODI2NjQ5ODgyODU4MDk6YkoxSDdROEp5S2Q1Mk1CbEx0ODE2';
+      const agentId = import.meta.env.VITE_DID_AGENT_ID || 'v2_agt_dY78cKv2';
+
+      // Create fresh script element
+      const script = document.createElement('script');
+      script.type = 'module';
+      script.src = 'https://agent.d-id.com/v2/index.js';
+      script.setAttribute('data-mode', 'full');
+      script.setAttribute('data-client-key', clientKey);
+      script.setAttribute('data-agent-id', agentId);
+      script.setAttribute('data-name', 'did-agent');
+      script.setAttribute('data-monitor', 'true');
+      script.setAttribute('data-target-id', containerId);
+
+      document.body.appendChild(script);
+      scriptRef.current = script;
+    };
+
+    // Initialize on mount
+    init();
+
+    // Listen for external refresh events
+    const handler = () => {
+      if (scriptRef.current && scriptRef.current.parentNode) {
+        scriptRef.current.parentNode.removeChild(scriptRef.current);
+        scriptRef.current = null;
+      }
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+      init();
+    };
+
+    window.addEventListener('metaAvatarRefresh', handler);
 
     return () => {
-      const container = document.getElementById('did-agent-container');
-      if (container) {
-        container.innerHTML = '';
+      window.removeEventListener('metaAvatarRefresh', handler);
+      if (scriptRef.current && scriptRef.current.parentNode) {
+        scriptRef.current.parentNode.removeChild(scriptRef.current);
+      }
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
       }
     };
   }, []);
-
-  const handleRetry = () => {
-    setError(false);
-    setRetryCount(0);
-    initializeAgent();
-  };
-
-  const clientKey = import.meta.env.VITE_DID_CLIENT_KEY || 'Z29vZ2xlLW9hdXRoMnwxMDcyNjU3ODI2NjQ5ODgyODU4MDk6YkoxSDdROEp5S2Q1Mk1CbEx0ODE2';
-  const agentId = import.meta.env.VITE_DID_AGENT_ID || 'v2_agt_dY78cKv2';
-  const fallbackUrl = `https://agent.d-id.com/v1/?mode=embed&client-key=${clientKey}&agent-id=${agentId}`;
 
   return (
     <div className="flex flex-col h-full">
@@ -101,41 +77,7 @@ export function MetaVatarOverlay() {
         </p>
       </div>
       
-      <div className="flex-1 relative min-h-[560px]">
-        {error ? (
-          <Alert variant="destructive" className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="flex flex-col gap-3">
-              <span>Failed to load MetaVatar agent. Please try again or open in a new tab.</span>
-              <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  onClick={handleRetry}
-                  className="gap-2"
-                >
-                  <RefreshCw className="h-3 w-3" />
-                  Retry
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => window.open(fallbackUrl, '_blank')}
-                  className="gap-2"
-                >
-                  <ExternalLink className="h-3 w-3" />
-                  Open in new tab
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        ) : null}
-        
-        <div 
-          id="did-agent-container" 
-          className="absolute inset-0 rounded-lg bg-card/50 overflow-hidden" 
-        />
-      </div>
+      <div ref={containerRef} className="flex-1 w-full" />
     </div>
   );
 }
