@@ -64,7 +64,11 @@ serve(async (req) => {
     const pair = dexData.pairs?.[0];
 
     if (!pair) {
-      throw new Error('Pair not found in DexScreener response');
+      console.warn(`DexScreener: pair not found for ${chain}/${pairAddress}`);
+      return new Response(
+        JSON.stringify({ error: 'Pair not found in DexScreener response' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Build normalized response
