@@ -10,6 +10,7 @@ import { CaptureSparkline } from "@/components/CaptureSparkline";
 import { IntentForm } from "@/components/IntentForm";
 import { ExecutionHistory } from "@/components/ExecutionHistory";
 import { MoneyPennyChat } from "@/components/MoneyPennyChat";
+import { FIOManager } from "@/components/FIOManager";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMoneyPenny } from "@/lib/aigent/moneypenny/client";
@@ -244,6 +245,11 @@ export default function Console() {
         {/* MoneyPenny Chat */}
         <div className="mt-6">
           <MoneyPennyChat />
+        </div>
+
+        {/* FIO Handle Management */}
+        <div className="mt-6">
+          <FIOManager />
         </div>
       </main>
     </div>
