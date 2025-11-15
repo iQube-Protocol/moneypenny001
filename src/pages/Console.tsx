@@ -11,6 +11,7 @@ import { IntentForm } from "@/components/IntentForm";
 import { ExecutionHistory } from "@/components/ExecutionHistory";
 import { MoneyPennyChat } from "@/components/MoneyPennyChat";
 import { FIOManager } from "@/components/FIOManager";
+import { RiskDashboard } from "@/components/RiskDashboard";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useMoneyPenny } from "@/lib/aigent/moneypenny/client";
@@ -250,6 +251,11 @@ export default function Console() {
         {/* FIO Handle Management */}
         <div className="mt-6">
           <FIOManager />
+        </div>
+
+        {/* Risk Dashboard */}
+        <div className="mt-6">
+          <RiskDashboard />
         </div>
       </main>
     </div>
