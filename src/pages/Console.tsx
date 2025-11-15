@@ -16,6 +16,7 @@ import { PortfolioAnalytics } from "@/components/PortfolioAnalytics";
 import { WalletStatus } from "@/components/WalletStatus";
 import { AdvancedIntentForm } from "@/components/AdvancedIntentForm";
 import { FIOPaymentRequests } from "@/components/FIOPaymentRequests";
+import { X402CustodyDashboard } from "@/components/X402CustodyDashboard";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -263,6 +264,11 @@ export default function Console() {
         {/* FIO Payment Requests */}
         <div className="mt-6">
           <FIOPaymentRequests />
+        </div>
+
+        {/* X402 Remote Custody */}
+        <div className="mt-6">
+          <X402CustodyDashboard />
         </div>
 
         {/* Risk Dashboard */}
