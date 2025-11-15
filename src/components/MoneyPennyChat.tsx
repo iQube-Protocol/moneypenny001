@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card } from '@/components/ui/card';
 import { useMoneyPenny } from '@/lib/aigent/moneypenny/client';
-import { Send, Loader2, Brain, BarChart3, Target, Zap, UserCircle } from 'lucide-react';
+import { Send, Loader2, Brain, BarChart3, Target, Zap, UserCircle, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useOverlayManager } from '@/hooks/use-overlay-manager';
 import { cn } from '@/lib/utils';
@@ -25,12 +25,13 @@ export const MoneyPennyChat = () => {
   const { openOverlay, activeOverlay } = useOverlayManager();
 
   const tabs = [
-    { id: 'profile', label: 'Profile', icon: UserCircle },
-    { id: 'metavatar', label: 'MetaVatar', icon: Brain },
-    { id: 'portfolio', label: 'Portfolio', icon: BarChart3 },
-    { id: 'intent-capture', label: 'Intent', icon: Target },
-    { id: 'live-insights', label: 'Insights', icon: Zap },
-  ] as const;
+    { id: 'profile' as const, label: 'Profile', icon: UserCircle },
+    { id: 'metavatar' as const, label: 'MetaVatar', icon: Brain },
+    { id: 'portfolio' as const, label: 'Portfolio', icon: BarChart3 },
+    { id: 'intent-capture' as const, label: 'Intent', icon: Target },
+    { id: 'research' as const, label: 'Research', icon: Search },
+    { id: 'live-insights' as const, label: 'Insights', icon: Zap },
+  ];
 
   useEffect(() => {
     if (scrollRef.current) {

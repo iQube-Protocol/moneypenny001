@@ -48,22 +48,8 @@ export default function Console() {
 
       {/* Main Console - Aigent MoneyPenny */}
       <main className="container mx-auto px-6 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div className="lg:col-span-2">
-            <LivePriceTicker />
-          </div>
-          <div>
-            <LiveDexFeed />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <div className="lg:col-span-2">
-            <MoneyPennyChat />
-          </div>
-          <div>
-            <ResearchPanel onStrategyUpdate={handleStrategyUpdate} />
-          </div>
+        <div className="grid grid-cols-1 gap-6 mb-6">
+          <MoneyPennyChat />
         </div>
       </main>
 
