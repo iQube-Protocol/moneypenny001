@@ -94,6 +94,31 @@ export function ResearchPanel({ onStrategyUpdate }: ResearchPanelProps) {
           </Button>
         </div>
 
+        {/* Quick Link Examples */}
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setTopic("What's your view on ETH this week?")}
+            className="text-xs px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-colors"
+            disabled={loading}
+          >
+            ETH outlook?
+          </button>
+          <button
+            onClick={() => setTopic("Should I buy BTC now or wait?")}
+            className="text-xs px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-colors"
+            disabled={loading}
+          >
+            BTC buy signal?
+          </button>
+          <button
+            onClick={() => setTopic("Is SOL bullish or bearish this month?")}
+            className="text-xs px-3 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20 transition-colors"
+            disabled={loading}
+          >
+            SOL trend?
+          </button>
+        </div>
+
         {memo && (
           <div className="space-y-4">
             {/* Strategy Recommendation */}
