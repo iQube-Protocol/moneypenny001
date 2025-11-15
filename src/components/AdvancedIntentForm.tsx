@@ -216,261 +216,213 @@ export function AdvancedIntentForm({ availableChains }: AdvancedIntentFormProps)
 
   return (
     <Card className="glass-card">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Settings2 className="h-5 w-5" />
-          Advanced Trading Intent
-        </CardTitle>
-        <CardDescription>
-          Submit sophisticated orders with limit prices, stop-loss, and take-profit
-        </CardDescription>
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <Settings2 className="h-4 w-4" />
+          <CardTitle className="text-base">Trading Intent</CardTitle>
+        </div>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={validateAndSubmit} className="space-y-6">
-          <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="basic">
-                <Zap className="h-4 w-4 mr-2" />
-                Basic
-              </TabsTrigger>
-              <TabsTrigger value="advanced">
-                <Settings2 className="h-4 w-4 mr-2" />
-                Advanced
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="basic" className="space-y-4">
-              {/* Chain Selection */}
-              <div className="space-y-2">
-                <Label>Chain</Label>
-                <div className="flex flex-wrap gap-2">
-                  {availableChains.map((chain) => (
-                    <ChainChip
-                      key={chain}
-                      chain={chain}
-                      active={selectedChain === chain}
-                      onClick={() => setSelectedChain(chain)}
-                    />
+      <CardContent className="space-y-3">
+        <form onSubmit={validateAndSubmit} className="space-y-3">
+          {/* Chain + Side Row */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Chain</Label>
+              <Select value={selectedChain} onValueChange={setSelectedChain}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  {availableChains.map(chain => (
+                    <SelectItem key={chain} value={chain} className="text-xs uppercase">{chain}</SelectItem>
                   ))}
-                </div>
-              </div>
+                </SelectContent>
+              </Select>
+            </div>
 
-              {/* Order Type */}
-              <div className="space-y-2">
-                <Label>Order Type</Label>
-                <Select value={orderType} onValueChange={(value) => setOrderType(value as "MARKET" | "LIMIT")}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover">
-                    <SelectItem value="MARKET">Market Order</SelectItem>
-                    <SelectItem value="LIMIT">Limit Order</SelectItem>
-                  </SelectContent>
-                </Select>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Side</Label>
+              <div className="flex gap-1">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={side === "BUY" ? "default" : "outline"}
+                  className="flex-1 h-8 text-xs"
+                  onClick={() => setSide("BUY")}
+                >
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  Buy
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={side === "SELL" ? "default" : "outline"}
+                  className="flex-1 h-8 text-xs"
+                  onClick={() => setSide("SELL")}
+                >
+                  <TrendingDown className="h-3 w-3 mr-1" />
+                  Sell
+                </Button>
               </div>
+            </div>
+          </div>
 
-              {/* Side */}
-              <div className="space-y-2">
-                <Label>Side</Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant={side === "BUY" ? "default" : "outline"}
-                    className="flex-1"
-                    onClick={() => setSide("BUY")}
-                  >
-                    <TrendingUp className="h-4 w-4 mr-2" />
-                    Buy
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={side === "SELL" ? "default" : "outline"}
-                    className="flex-1"
-                    onClick={() => setSide("SELL")}
-                  >
-                    <TrendingDown className="h-4 w-4 mr-2" />
-                    Sell
-                  </Button>
-                </div>
-              </div>
+          {/* Order Type + Amount Row */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Order Type</Label>
+              <Select value={orderType} onValueChange={(value) => setOrderType(value as "MARKET" | "LIMIT")}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="MARKET" className="text-xs">Market</SelectItem>
+                  <SelectItem value="LIMIT" className="text-xs">Limit</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              {/* Amount */}
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount (Q¢)</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="amount" className="text-xs">Amount (Q¢)</Label>
+              <Input
+                id="amount"
+                type="number"
+                step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="100"
+                className="h-8 text-xs"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Limit Price (conditional) + Min Edge Row */}
+          <div className="grid grid-cols-2 gap-2">
+            {orderType === "LIMIT" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="limitPrice" className="text-xs">Limit Price</Label>
                 <Input
-                  id="amount"
+                  id="limitPrice"
                   type="number"
-                  step="0.01"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="100"
+                  step="0.0001"
+                  value={limitPrice}
+                  onChange={(e) => setLimitPrice(e.target.value)}
+                  placeholder="0.00"
+                  className="h-8 text-xs"
                   required
                 />
               </div>
+            )}
 
-              {/* Limit Price */}
-              {orderType === "LIMIT" && (
-                <div className="space-y-2">
-                  <Label htmlFor="limitPrice">Limit Price (USDC)</Label>
-                  <Input
-                    id="limitPrice"
-                    type="number"
-                    step="0.0001"
-                    value={limitPrice}
-                    onChange={(e) => setLimitPrice(e.target.value)}
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-              )}
+            <div className="space-y-1.5">
+              <Label htmlFor="minEdge" className="text-xs">Min Edge (bps)</Label>
+              <Input
+                id="minEdge"
+                type="number"
+                step="0.1"
+                value={minEdgeBps}
+                onChange={(e) => setMinEdgeBps(e.target.value)}
+                placeholder="1.0"
+                className="h-8 text-xs"
+                required
+              />
+            </div>
 
-              {/* Min Edge */}
-              <div className="space-y-2">
-                <Label htmlFor="minEdge">Min Edge (bps)</Label>
-                <Input
-                  id="minEdge"
-                  type="number"
-                  step="0.1"
-                  value={minEdgeBps}
-                  onChange={(e) => setMinEdgeBps(e.target.value)}
-                  placeholder="1.0"
-                  required
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="maxSlippage" className="text-xs">Max Slip (bps)</Label>
+              <Input
+                id="maxSlippage"
+                type="number"
+                step="0.1"
+                value={maxSlippageBps}
+                onChange={(e) => setMaxSlippageBps(e.target.value)}
+                placeholder="5.0"
+                className="h-8 text-xs"
+                required
+              />
+            </div>
+          </div>
 
-              {/* Max Slippage */}
-              <div className="space-y-2">
-                <Label htmlFor="maxSlippage">Max Slippage (bps)</Label>
-                <Input
-                  id="maxSlippage"
-                  type="number"
-                  step="0.1"
-                  value={maxSlippageBps}
-                  onChange={(e) => setMaxSlippageBps(e.target.value)}
-                  placeholder="5.0"
-                  required
-                />
-              </div>
-            </TabsContent>
+          {/* Advanced Toggle */}
+          <div className="flex items-center gap-2 pt-1">
+            <Switch
+              checked={enableStopLoss || enableTakeProfit}
+              onCheckedChange={(checked) => {
+                setEnableStopLoss(checked);
+                setEnableTakeProfit(checked);
+              }}
+              className="scale-75"
+            />
+            <Label className="text-xs text-muted-foreground cursor-pointer">
+              Stop Loss / Take Profit
+            </Label>
+          </div>
 
-            <TabsContent value="advanced" className="space-y-4">
-              {/* Time in Force */}
-              <div className="space-y-2">
-                <Label>Time in Force</Label>
-                <Select value={timeInForce} onValueChange={(value) => setTimeInForce(value as typeof timeInForce)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-popover">
-                    <SelectItem value="GTC">Good Till Cancel (GTC)</SelectItem>
-                    <SelectItem value="IOC">Immediate or Cancel (IOC)</SelectItem>
-                    <SelectItem value="FOK">Fill or Kill (FOK)</SelectItem>
-                    <SelectItem value="DAY">Day Order</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  {timeInForce === "GTC" && "Order remains active until filled or cancelled"}
-                  {timeInForce === "IOC" && "Execute immediately and cancel any unfilled portion"}
-                  {timeInForce === "FOK" && "Must be filled completely or cancelled entirely"}
-                  {timeInForce === "DAY" && "Order expires at end of trading day"}
-                </p>
-              </div>
-
-              {/* Stop Loss */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="stopLoss">Stop Loss (USDC)</Label>
-                  <Switch
-                    checked={enableStopLoss}
-                    onCheckedChange={setEnableStopLoss}
-                  />
-                </div>
-                {enableStopLoss && (
+          {/* Stop Loss + Take Profit Row (when enabled) */}
+          {(enableStopLoss || enableTakeProfit) && (
+            <div className="grid grid-cols-2 gap-2">
+              {enableStopLoss && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="stopLoss" className="text-xs">Stop Loss</Label>
                   <Input
                     id="stopLoss"
                     type="number"
                     step="0.0001"
                     value={stopLoss}
                     onChange={(e) => setStopLoss(e.target.value)}
-                    placeholder="Enter stop loss price"
-                  />
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Automatically exit position if price reaches this level
-                </p>
-              </div>
-
-              {/* Take Profit */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="takeProfit">Take Profit (USDC)</Label>
-                  <Switch
-                    checked={enableTakeProfit}
-                    onCheckedChange={setEnableTakeProfit}
+                    placeholder="0.00"
+                    className="h-8 text-xs"
                   />
                 </div>
-                {enableTakeProfit && (
+              )}
+              {enableTakeProfit && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="takeProfit" className="text-xs">Take Profit</Label>
                   <Input
                     id="takeProfit"
                     type="number"
                     step="0.0001"
                     value={takeProfit}
                     onChange={(e) => setTakeProfit(e.target.value)}
-                    placeholder="Enter take profit price"
+                    placeholder="0.00"
+                    className="h-8 text-xs"
                   />
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Automatically lock in profits when price reaches this level
-                </p>
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          {/* Current Intent Status */}
-          {currentIntent && (
-            <div className="p-3 rounded-lg border bg-card">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium">Current Intent</span>
-                <Badge variant={
-                  currentIntent.status === 'filled' ? 'default' :
-                  currentIntent.status === 'failed' ? 'destructive' :
-                  'secondary'
-                }>
-                  {currentIntent.status}
-                </Badge>
-              </div>
-              <div className="text-xs text-muted-foreground space-y-1">
-                <div>ID: {currentIntent.intent_id}</div>
-                <div>Chain: {currentIntent.chain}</div>
-                <div>Amount: {currentIntent.amount_qc} Q¢</div>
-              </div>
-              {currentIntent.status === 'pending' && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  className="mt-3 w-full"
-                  onClick={handleCancel}
-                >
-                  Cancel Intent
-                </Button>
+                </div>
               )}
+            </div>
+          )}
+
+          {/* Current Intent Status (compact) */}
+          {currentIntent && (
+            <div className="p-2 rounded border bg-card/50 flex items-center justify-between">
+              <div className="text-xs">
+                <span className="text-muted-foreground">Intent:</span>
+                <span className="font-mono ml-1">{currentIntent.intent_id.slice(0, 8)}...</span>
+              </div>
+              <Badge variant={
+                currentIntent.status === 'filled' ? 'default' :
+                currentIntent.status === 'failed' ? 'destructive' :
+                'secondary'
+              } className="text-xs">
+                {currentIntent.status}
+              </Badge>
             </div>
           )}
 
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full"
+            className="w-full h-8 text-xs"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-3 w-3 mr-2 animate-spin" />
                 Submitting...
               </>
             ) : (
-              <>Submit {orderType} Order</>
+              <>Submit {orderType}</>
             )}
           </Button>
         </form>
