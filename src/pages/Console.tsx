@@ -7,24 +7,10 @@ import { EdgeGauge } from "@/components/EdgeGauge";
 import { QuotesTable } from "@/components/QuotesTable";
 import { FillsTicker } from "@/components/FillsTicker";
 import { CaptureSparkline } from "@/components/CaptureSparkline";
-import { IntentForm } from "@/components/IntentForm";
 import { ExecutionHistory } from "@/components/ExecutionHistory";
 import { MoneyPennyChat } from "@/components/MoneyPennyChat";
-import { FIOManager } from "@/components/FIOManager";
-import { RiskDashboard } from "@/components/RiskDashboard";
-import { PortfolioAnalytics } from "@/components/PortfolioAnalytics";
 import { WalletStatus } from "@/components/WalletStatus";
 import { AdvancedIntentForm } from "@/components/AdvancedIntentForm";
-import { FIOPaymentRequests } from "@/components/FIOPaymentRequests";
-import { X402CustodyDashboard } from "@/components/X402CustodyDashboard";
-import { NotificationStatus } from "@/components/NotificationStatus";
-import { PersonaManager } from "@/components/PersonaManager";
-import { TransactionHistory } from "@/components/TransactionHistory";
-import { FeeEstimator } from "@/components/FeeEstimator";
-import { StrategyBuilder } from "@/components/StrategyBuilder";
-import { LiquidityAnalytics } from "@/components/LiquidityAnalytics";
-import { AITradeAdvisor } from "@/components/AITradeAdvisor";
-import { ArbitrageDetector } from "@/components/ArbitrageDetector";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { ExecutionFeed } from "@/components/ExecutionFeed";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
@@ -190,17 +176,12 @@ export default function Console() {
               <Link to="/profile">
                 <Button variant="outline" size="sm">Profile</Button>
               </Link>
-              <NotificationStatus />
               <NotificationCenter />
               <Badge variant={mode === "LIVE" ? "destructive" : "secondary"} className="text-xs">
                 <Activity className="h-3 w-3 mr-1" />
                 {mode} MODE
               </Badge>
               <WalletDrawer />
-              <Button size="sm" variant="outline" className="gap-2">
-                <MessageSquare className="h-4 w-4" />
-                MoneyPenny Chat
-              </Button>
             </div>
           </div>
         </div>
@@ -262,69 +243,9 @@ export default function Console() {
           <ExecutionFeed maxItems={15} showSound={true} />
         </div>
 
-        {/* MoneyPenny Chat */}
+        {/* AI Assistant */}
         <div className="mt-6">
           <MoneyPennyChat />
-        </div>
-
-        {/* Persona Management */}
-        <div className="mt-6">
-          <PersonaManager />
-        </div>
-
-        {/* FIO Handle Management */}
-        <div className="mt-6">
-          <FIOManager />
-        </div>
-
-        {/* FIO Payment Requests */}
-        <div className="mt-6">
-          <FIOPaymentRequests />
-        </div>
-
-        {/* X402 Remote Custody */}
-        <div className="mt-6">
-          <X402CustodyDashboard />
-        </div>
-
-        {/* Transaction History */}
-        <div className="mt-6">
-          <TransactionHistory />
-        </div>
-
-        {/* Fee Estimator */}
-        <div className="mt-6">
-          <FeeEstimator />
-        </div>
-
-        {/* Strategy Builder */}
-        <div className="mt-6">
-          <StrategyBuilder />
-        </div>
-
-        {/* Risk Dashboard */}
-        <div className="mt-6">
-          <RiskDashboard />
-        </div>
-
-        {/* Liquidity Analytics */}
-        <div className="mt-6">
-          <LiquidityAnalytics />
-        </div>
-
-        {/* AI Trade Advisor */}
-        <div className="mt-6">
-          <AITradeAdvisor />
-        </div>
-
-        {/* Arbitrage Detector */}
-        <div className="mt-6">
-          <ArbitrageDetector />
-        </div>
-
-        {/* Portfolio Analytics */}
-        <div className="mt-6">
-          <PortfolioAnalytics />
         </div>
       </main>
     </div>
