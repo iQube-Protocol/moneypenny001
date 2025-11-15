@@ -6,7 +6,11 @@ import { LiveInsightsOverlay } from "./LiveInsightsOverlay";
 import { ProfileOverlay } from "./ProfileOverlay";
 import { MetaVatarOverlay } from "./MetaVatarOverlay";
 
-export function OverlayManager() {
+interface OverlayManagerProps {
+  currentStrategy?: any;
+}
+
+export function OverlayManager({ currentStrategy }: OverlayManagerProps) {
   const { activeOverlay, closeOverlay } = useOverlayManager();
 
   const renderOverlay = () => {
@@ -14,7 +18,7 @@ export function OverlayManager() {
       case 'portfolio':
         return <PortfolioOverlay />;
       case 'intent-capture':
-        return <IntentCaptureOverlay />;
+        return <IntentCaptureOverlay suggestedStrategy={currentStrategy} />;
       case 'live-insights':
         return <LiveInsightsOverlay />;
       case 'profile':

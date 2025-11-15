@@ -4,8 +4,11 @@ import { FillsTicker } from "@/components/FillsTicker";
 
 const chains = ["eth", "arb", "base", "op", "poly", "btc", "sol"];
 
-export function IntentCaptureOverlay() {
-  // Mock data for now - in real implementation, this would come from props or context
+interface IntentCaptureOverlayProps {
+  suggestedStrategy?: any;
+}
+
+export function IntentCaptureOverlay({ suggestedStrategy }: IntentCaptureOverlayProps) {
   const captureData = [];
   const fills = [];
   const totalQc = 0;
@@ -19,7 +22,7 @@ export function IntentCaptureOverlay() {
         </p>
       </div>
 
-      <AdvancedIntentForm availableChains={chains} />
+      <AdvancedIntentForm availableChains={chains} suggestedStrategy={suggestedStrategy} />
       
       <div className="grid grid-cols-1 gap-4 mt-4">
         <CaptureSparkline data={captureData} totalQc={totalQc} />

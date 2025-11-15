@@ -6,8 +6,20 @@ import { NotificationCenter } from "@/components/NotificationCenter";
 import { LivePriceTicker } from "@/components/LivePriceTicker";
 import { LiveDexFeed } from "@/components/LiveDexFeed";
 import { ResearchPanel } from "@/components/ResearchPanel";
+import { useOverlayManager } from "@/hooks/use-overlay-manager";
+import { useState } from "react";
 import { Link } from "react-router-dom";
+
 export default function Console() {
+  const { openOverlay } = useOverlayManager();
+  const [currentStrategy, setCurrentStrategy] = useState<any>(null);
+
+  const handleStrategyUpdate = (strategy: any) => {
+    setCurrentStrategy(strategy);
+    // Auto-open intent overlay with the strategy
+    setTimeout(() => openOverlay('intent-capture'), 300);
+  };
+
   return <div className="min-h-screen">
       {/* Header */}
       <header className="border-b border-border glass-card">
@@ -50,7 +62,7 @@ export default function Console() {
             <MoneyPennyChat />
           </div>
           <div>
-            <ResearchPanel />
+            <ResearchPanel onStrategyUpdate={handleStrategyUpdate} />
           </div>
         </div>
       </main>

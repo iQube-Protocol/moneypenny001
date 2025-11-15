@@ -6,27 +6,46 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Search, ExternalLink, Shield, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import type { ResearchMemo, ResearchResponse } from '@/lib/aigent/core/types/research';
+import { StrategyComparison } from './StrategyComparison';
+import { useToast } from '@/hooks/use-toast';
 
-export function ResearchPanel() {
+interface ResearchPanelProps {
+  onStrategyUpdate?: (strategy: any) => void;
+}
+
+export function ResearchPanel({ onStrategyUpdate }: ResearchPanelProps) {
   const [topic, setTopic] = useState('');
   const [loading, setLoading] = useState(false);
-  const [memo, setMemo] = useState<ResearchMemo | null>(null);
+  const [memo, setMemo] = useState<any>(null);
+  const { toast } = useToast();
 
   const handleResearch = async () => {
     if (!topic.trim()) return;
     
     setLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke<ResearchResponse>('research-agent', {
+      const { data, error } = await supabase.functions.invoke<any>('research-agent', {
         body: { topic, maxResults: 5 },
       });
       
       if (error) throw error;
       if (data?.memo) {
         setMemo(data.memo);
+        if (data.memo.strategy && onStrategyUpdate) {
+          onStrategyUpdate(data.memo.strategy);
+        }
+        toast({
+          title: "Research Complete",
+          description: `Strategy: ${data.memo.strategy?.action || 'hold'}`,
+        });
       }
     } catch (error) {
       console.error('Research error:', error);
+      toast({
+        title: "Research Failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -80,6 +99,23 @@ export function ResearchPanel() {
 
         {memo && (
           <div className="space-y-4">
+            {/* Strategy Recommendation */}
+            {memo.strategy && (
+              <StrategyComparison
+                current={memo.strategy}
+                previous={memo.previousStrategy}
+                onApply={(strategy) => {
+                  if (onStrategyUpdate) {
+                    onStrategyUpdate(strategy);
+                    toast({
+                      title: "Strategy Applied",
+                      description: "Intent form updated",
+                    });
+                  }
+                }}
+              />
+            )}
+            
             {/* iQube Scoring */}
             <div className="flex flex-wrap gap-2 items-center">
               <Badge className={getTierColor(memo.iq_tier)}>
