@@ -11,18 +11,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { getMoneyPenny } from '@/lib/aigent/moneypenny/client';
 import { FIORequest } from '@/lib/aigent/moneypenny/modules/fio';
+import { X402Claim, SettlementType } from '@/lib/aigent/moneypenny/modules/x402';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RefreshCw, Plus, Copy, Check, X, ExternalLink } from 'lucide-react';
 
 export function FIOPaymentRequests() {
   const [receivedRequests, setReceivedRequests] = useState<FIORequest[]>([]);
   const [sentRequests, setSentRequests] = useState<FIORequest[]>([]);
+  const [x402Claims, setX402Claims] = useState<X402Claim[]>([]);
   const [loading, setLoading] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [newRequest, setNewRequest] = useState({
     toFio: '',
     amount: '',
     asset: 'ETH',
+    chain: 'eth',
     memo: '',
+    useX402: false,
+    settlementType: 'remote_custody' as SettlementType,
   });
   const { toast } = useToast();
 
@@ -30,12 +36,14 @@ export function FIOPaymentRequests() {
     setLoading(true);
     try {
       const moneyPenny = getMoneyPenny();
-      const [received, sent] = await Promise.all([
+      const [received, sent, claims] = await Promise.all([
         moneyPenny.fio.listPaymentRequests('received'),
         moneyPenny.fio.listPaymentRequests('sent'),
+        moneyPenny.x402.listClaims(),
       ]);
       setReceivedRequests(received);
       setSentRequests(sent);
+      setX402Claims(claims);
     } catch (error) {
       console.error('Load requests error:', error);
       toast({
@@ -64,6 +72,23 @@ export function FIOPaymentRequests() {
 
     try {
       const moneyPenny = getMoneyPenny();
+      
+      // If X402 is enabled, create X402 claim first
+      if (newRequest.useX402) {
+        const claim = await moneyPenny.x402.createClaim(
+          parseFloat(newRequest.amount),
+          newRequest.asset,
+          newRequest.settlementType,
+          newRequest.chain
+        );
+        
+        toast({
+          title: 'X402 Claim Created',
+          description: `Claim ${claim.claim_id} created with ${newRequest.settlementType}`,
+        });
+      }
+      
+      // Create FIO payment request
       await moneyPenny.fio.createPaymentRequest(
         newRequest.toFio,
         parseFloat(newRequest.amount),
@@ -73,11 +98,21 @@ export function FIOPaymentRequests() {
       
       toast({
         title: 'Success',
-        description: 'Payment request created successfully',
+        description: newRequest.useX402 
+          ? 'Payment request created with X402 settlement'
+          : 'Payment request created successfully',
       });
       
       setCreateDialogOpen(false);
-      setNewRequest({ toFio: '', amount: '', asset: 'ETH', memo: '' });
+      setNewRequest({ 
+        toFio: '', 
+        amount: '', 
+        asset: 'ETH', 
+        chain: 'eth',
+        memo: '',
+        useX402: false,
+        settlementType: 'remote_custody',
+      });
       loadRequests();
     } catch (error) {
       console.error('Create request error:', error);
@@ -89,13 +124,26 @@ export function FIOPaymentRequests() {
     }
   };
 
-  const handleRespond = async (requestId: string, action: 'pay' | 'reject') => {
+  const handleRespond = async (requestId: string, action: 'pay' | 'reject', useX402?: boolean) => {
     try {
       const moneyPenny = getMoneyPenny();
+      
+      if (action === 'pay' && useX402) {
+        // Use X402 for payment
+        const request = receivedRequests.find(r => r.request_id === requestId);
+        if (request) {
+          await moneyPenny.x402.createClaim(
+            request.amount,
+            request.asset,
+            'canonical_minting'
+          );
+        }
+      }
+      
       await moneyPenny.fio.respondToRequest(requestId, action);
       toast({
         title: 'Success',
-        description: `Payment request ${action === 'pay' ? 'paid' : 'rejected'}`,
+        description: `Payment request ${action === 'pay' ? 'paid' : 'rejected'}${useX402 ? ' via X402' : ''}`,
       });
       loadRequests();
     } catch (error) {
@@ -103,6 +151,25 @@ export function FIOPaymentRequests() {
       toast({
         title: 'Error',
         description: `Failed to ${action} payment request`,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSettleClaim = async (claimId: string) => {
+    try {
+      const moneyPenny = getMoneyPenny();
+      const result = await moneyPenny.x402.settleClaim(claimId);
+      toast({
+        title: 'Success',
+        description: result.tx_hash ? `Claim settled: ${result.tx_hash}` : 'Claim settled',
+      });
+      loadRequests();
+    } catch (error) {
+      console.error('Settle claim error:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to settle claim',
         variant: 'destructive',
       });
     }
@@ -161,20 +228,31 @@ export function FIOPaymentRequests() {
           </div>
 
           {type === 'received' && request.status === 'pending' && (
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={() => handleRespond(request.request_id, 'pay')}
-                className="flex-1"
-              >
-                <Check className="w-4 h-4 mr-1" />
-                Pay
-              </Button>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => handleRespond(request.request_id, 'pay', false)}
+                  className="flex-1"
+                >
+                  <Check className="w-4 h-4 mr-1" />
+                  Pay Direct
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleRespond(request.request_id, 'pay', true)}
+                  className="flex-1"
+                >
+                  <Check className="w-4 h-4 mr-1" />
+                  Pay X402
+                </Button>
+              </div>
               <Button
                 size="sm"
                 variant="destructive"
                 onClick={() => handleRespond(request.request_id, 'reject')}
-                className="flex-1"
+                className="w-full"
               >
                 <X className="w-4 h-4 mr-1" />
                 Reject
@@ -297,6 +375,28 @@ export function FIOPaymentRequests() {
                     />
                   </div>
                   <div>
+                    <Label htmlFor="chain">Chain</Label>
+                    <Select
+                      value={newRequest.chain}
+                      onValueChange={(value) =>
+                        setNewRequest({ ...newRequest, chain: value })
+                      }
+                    >
+                      <SelectTrigger id="chain">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="eth">Ethereum</SelectItem>
+                        <SelectItem value="arb">Arbitrum</SelectItem>
+                        <SelectItem value="base">Base</SelectItem>
+                        <SelectItem value="op">Optimism</SelectItem>
+                        <SelectItem value="poly">Polygon</SelectItem>
+                        <SelectItem value="btc">Bitcoin</SelectItem>
+                        <SelectItem value="sol">Solana</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
                     <Label htmlFor="memo">Memo (optional)</Label>
                     <Textarea
                       id="memo"
@@ -307,6 +407,54 @@ export function FIOPaymentRequests() {
                       }
                     />
                   </div>
+                  <div className="flex items-center space-x-2 p-4 bg-muted rounded-lg">
+                    <input
+                      type="checkbox"
+                      id="useX402"
+                      checked={newRequest.useX402}
+                      onChange={(e) =>
+                        setNewRequest({ ...newRequest, useX402: e.target.checked })
+                      }
+                      className="h-4 w-4"
+                    />
+                    <Label htmlFor="useX402" className="cursor-pointer">
+                      Use X402 Settlement (DiDQube Persona)
+                    </Label>
+                  </div>
+                  {newRequest.useX402 && (
+                    <div>
+                      <Label htmlFor="settlementType">Settlement Type</Label>
+                      <Select
+                        value={newRequest.settlementType}
+                        onValueChange={(value: SettlementType) =>
+                          setNewRequest({ ...newRequest, settlementType: value })
+                        }
+                      >
+                        <SelectTrigger id="settlementType">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="remote_custody">
+                            Remote Custody (Escrow)
+                          </SelectItem>
+                          <SelectItem value="deferred_minting">
+                            Deferred Minting
+                          </SelectItem>
+                          <SelectItem value="canonical_minting">
+                            Canonical Minting
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {newRequest.settlementType === 'remote_custody' &&
+                          'Funds held in escrow until settlement'}
+                        {newRequest.settlementType === 'deferred_minting' &&
+                          'Mint tokens upon payment confirmation'}
+                        {newRequest.settlementType === 'canonical_minting' &&
+                          'Direct on-chain minting with verification'}
+                      </p>
+                    </div>
+                  )}
                   <Button onClick={handleCreateRequest} className="w-full">
                     Create Request
                   </Button>
@@ -318,11 +466,12 @@ export function FIOPaymentRequests() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="received">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="received">
               Received ({receivedRequests.length})
             </TabsTrigger>
             <TabsTrigger value="sent">Sent ({sentRequests.length})</TabsTrigger>
+            <TabsTrigger value="x402">X402 ({x402Claims.length})</TabsTrigger>
           </TabsList>
           <TabsContent value="received" className="space-y-4">
             {receivedRequests.length === 0 ? (
@@ -351,6 +500,68 @@ export function FIOPaymentRequests() {
                   request={request}
                   type="sent"
                 />
+              ))
+            )}
+          </TabsContent>
+          <TabsContent value="x402" className="space-y-4">
+            {x402Claims.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No X402 claims
+              </div>
+            ) : (
+              x402Claims.map((claim) => (
+                <Card key={claim.claim_id}>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <CardTitle className="text-sm font-medium">
+                          Claim {claim.claim_id.slice(0, 8)}...
+                        </CardTitle>
+                        <CardDescription>
+                          {claim.amount} {claim.asset} {claim.chain && `on ${claim.chain}`}
+                        </CardDescription>
+                      </div>
+                      <Badge
+                        variant={
+                          claim.status === 'settled'
+                            ? 'default'
+                            : claim.status === 'expired'
+                            ? 'destructive'
+                            : 'secondary'
+                        }
+                      >
+                        {claim.status}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="text-xs space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Settlement:</span>
+                        <span className="font-medium">{claim.settlement_type}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Created:</span>
+                        <span>{new Date(claim.created_at).toLocaleString()}</span>
+                      </div>
+                      {claim.expires_at && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Expires:</span>
+                          <span>{new Date(claim.expires_at).toLocaleString()}</span>
+                        </div>
+                      )}
+                    </div>
+                    {claim.status === 'pending' && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleSettleClaim(claim.claim_id)}
+                        className="w-full mt-2"
+                      >
+                        Settle Claim
+                      </Button>
+                    )}
+                  </CardContent>
+                </Card>
               ))
             )}
           </TabsContent>
