@@ -25,10 +25,10 @@ export function OverlayManager() {
 
   return (
     <Sheet open={!!activeOverlay} onOpenChange={(open) => !open && closeOverlay()}>
-      <SheetOverlay className="bg-background/80 backdrop-blur-sm" />
+      <SheetOverlay className="bg-transparent" />
       <SheetContent 
         side="left" 
-        className="w-[calc(100vw-14rem)] left-14 h-[600px] top-auto bottom-[4.5rem] glass-card border-r border-primary/20 p-6"
+        className="w-[calc(100vw-14rem)] left-14 h-[600px] top-auto bottom-[4.5rem] bg-background/40 backdrop-blur-md border-r border-primary/20 p-6"
       >
         {renderOverlay()}
       </SheetContent>
