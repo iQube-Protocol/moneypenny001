@@ -3,6 +3,8 @@ import { WalletDrawer } from "@/components/WalletDrawer";
 import { MoneyPennyChat } from "@/components/MoneyPennyChat";
 import { OverlayManager } from "@/components/overlays/OverlayManager";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { LivePriceTicker } from "@/components/LivePriceTicker";
+import { LiveDexFeed } from "@/components/LiveDexFeed";
 import { Link } from "react-router-dom";
 export default function Console() {
   return <div className="min-h-screen">
@@ -33,6 +35,15 @@ export default function Console() {
 
       {/* Main Console - Aigent MoneyPenny */}
       <main className="container mx-auto px-6 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="lg:col-span-2">
+            <LivePriceTicker />
+          </div>
+          <div>
+            <LiveDexFeed />
+          </div>
+        </div>
+        
         <MoneyPennyChat />
       </main>
 
