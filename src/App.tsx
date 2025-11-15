@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import Index from "./pages/Index";
 import Console from "./pages/Console";
 import Profile from "./pages/Profile";
+import MetaVatar from "./pages/MetaVatar";
 import NotFound from "./pages/NotFound";
 import { Auth } from "./components/Auth";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -107,6 +108,7 @@ const App = () => {
                 <Profile />
               </ProtectedRoute>
             } />
+            <Route path="/metavatar" element={<MetaVatar />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
