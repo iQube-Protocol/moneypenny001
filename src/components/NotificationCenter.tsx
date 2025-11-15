@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/tabs';
 import { useMoneyPenny } from '@/lib/aigent/moneypenny/client';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Bell, 
   BellRing, 
@@ -84,6 +85,37 @@ export const NotificationCenter = () => {
       }
     };
   }, [settings]);
+
+  useEffect(() => {
+    // Subscribe to real-time execution fill notifications
+    const channel = supabase
+      .channel('notifications')
+      .on('broadcast', { event: 'notification' }, (payload) => {
+        const notification = payload.payload as any;
+        if (notification.type === 'execution_fill' && settings.executions) {
+          console.log('Real-time execution fill notification:', notification);
+          
+          const newNotification: Notification = {
+            id: `exec-${notification.data.execution_id}-${Date.now()}`,
+            type: 'execution',
+            title: 'Trade Filled',
+            message: `${notification.data.qty_filled} ${notification.data.asset} filled at $${notification.data.avg_price.toFixed(2)} on ${notification.data.chain}. Capture: ${notification.data.capture_bps.toFixed(1)} bps`,
+            severity: 'success',
+            timestamp: new Date(notification.timestamp),
+            read: false,
+            data: notification.data,
+          };
+          
+          addNotification(newNotification);
+          showToast(newNotification.title, newNotification.message, 'default');
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [settings.executions]);
 
   useEffect(() => {
     const count = notifications.filter(n => !n.read).length;
