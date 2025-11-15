@@ -15,10 +15,11 @@ interface DexData {
   source: string;
 }
 
-// Real DEX pair addresses
+// Default to a known working pair; add more via config later
 const TRACKED_PAIRS = [
-  { chain: 'solana', address: '58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2', label: 'SOL/USDC' },
   { chain: 'ethereum', address: '0x88e6a0c2ddd26feeb64f039a2c41296fcb3f5640', label: 'ETH/USDC' },
+  // Example Solana pair (replace with a valid pool address when ready):
+  // { chain: 'solana', address: 'REPLACE_WITH_VALID_PAIR', label: 'SOL/USDC' },
 ];
 
 export function LiveDexFeed() {
