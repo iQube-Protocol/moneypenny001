@@ -50,7 +50,7 @@ export function LivePriceTicker() {
 
   useEffect(() => {
     fetchPrices();
-    const interval = setInterval(fetchPrices, 30000); // Refresh every 30s
+    const interval = setInterval(fetchPrices, 60000); // Refresh every 60s (reduced to avoid rate limits)
     return () => clearInterval(interval);
   }, []);
 
