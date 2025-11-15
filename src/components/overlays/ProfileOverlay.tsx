@@ -1,11 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Upload, FileText, Trash2, TrendingUp, DollarSign, Activity } from "lucide-react";
+import { Upload, FileText, Trash2, TrendingUp, DollarSign, Activity, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useMoneyPenny } from "@/lib/aigent/moneypenny/client";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface BankingDocument {
   id: string;
@@ -17,38 +20,135 @@ interface BankingDocument {
 
 export function ProfileOverlay() {
   const [documents, setDocuments] = useState<BankingDocument[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
+  const moneyPenny = useMoneyPenny();
+
+  // Fetch real aggregates and recommendations from backend
+  const { data: aggregatesData, refetch: refetchAggregates } = useQuery({
+    queryKey: ['banking-aggregates'],
+    queryFn: async () => {
+      try {
+        return await moneyPenny.aggregates.getAggregates();
+      } catch (error) {
+        console.error("Failed to fetch aggregates:", error);
+        return null;
+      }
+    },
+    refetchOnWindowFocus: false,
+  });
+
+  const { data: recommendationsData } = useQuery({
+    queryKey: ['banking-recommendations'],
+    queryFn: async () => {
+      try {
+        return await moneyPenny.aggregates.getRecommendations();
+      } catch (error) {
+        console.error("Failed to fetch recommendations:", error);
+        return null;
+      }
+    },
+    refetchOnWindowFocus: false,
+  });
 
   const aggregates = {
-    avgSurplus: 41.8,
-    surplusVol: 17.3,
-    lastBalance: 2180.55,
+    avgSurplus: aggregatesData?.surplus_mean_daily || 0,
+    surplusVol: aggregatesData?.surplus_vol_daily || 0,
+    lastBalance: aggregatesData?.closing_balance_last || 0,
   };
 
-  const suggestedPolicy = {
-    inventoryBand: { min: 250, max: 2500 },
-    minEdgeBps: 1.0,
-    dailyLossLimit: 4.0,
-    maxNotionalUsd: 250.0,
+  const suggestedPolicy = recommendationsData || {
+    inventory_band: { min_qc: 250, max_qc: 2500 },
+    min_edge_bps_baseline: 1.0,
+    daily_loss_limit_bps: 4.0,
+    max_notional_usd_day: 250.0,
+    confidence: 0.5,
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files) {
-      Array.from(files).forEach(file => {
-        const newDoc: BankingDocument = {
-          id: Math.random().toString(36).substr(2, 9),
+    if (!files || files.length === 0) return;
+    
+    setIsUploading(true);
+    
+    try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to upload documents",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Initialize bucket for banking documents
+      const bucket = await moneyPenny.storage.initBucket('banking-docs');
+      
+      const fileIds: string[] = [];
+      const uploadedDocs: BankingDocument[] = [];
+      
+      // Upload each file
+      for (const file of Array.from(files)) {
+        const uploadedFile = await moneyPenny.storage.uploadFileComplete(
+          bucket.bucket_id,
+          file,
+          (progress) => console.log(`Upload progress: ${progress}%`)
+        );
+        
+        fileIds.push(uploadedFile.file_id);
+        
+        uploadedDocs.push({
+          id: uploadedFile.file_id,
           name: file.name,
-          month: "2024-06",
+          month: new Date().toISOString().slice(0, 7),
           size: `${(file.size / 1024).toFixed(1)} KB`,
           uploaded: new Date().toISOString(),
-        };
-        setDocuments(prev => [...prev, newDoc]);
-      });
+        });
+      }
+      
+      setDocuments(prev => [...prev, ...uploadedDocs]);
+      
+      // Trigger banking document parser
+      const { data: parseResult, error: parseError } = await supabase.functions.invoke(
+        'banking-document-parser',
+        {
+          body: {
+            bucket_id: bucket.bucket_id,
+            file_ids: fileIds,
+            user_id: user.id,
+          }
+        }
+      );
+      
+      if (parseError) {
+        console.error("Parser error:", parseError);
+        toast({
+          title: "Analysis failed",
+          description: "Could not analyze bank statements. Using uploaded files for future analysis.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
       toast({
-        title: "Documents uploaded",
-        description: `${files.length} file(s) uploaded successfully`,
+        title: "Documents analyzed",
+        description: `${files.length} file(s) processed. Financial profile updated.`,
       });
+      
+      // Refresh aggregates
+      await refetchAggregates();
+      
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({
+        title: "Upload failed",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -60,11 +160,26 @@ export function ProfileOverlay() {
     });
   };
 
-  const applyToConsole = () => {
-    toast({
-      title: "Policy applied",
-      description: "Trading policy has been applied to console",
-    });
+  const applyToConsole = async () => {
+    try {
+      // Save policy to localStorage for intent form
+      localStorage.setItem('moneypenny_applied_config', JSON.stringify(suggestedPolicy));
+      
+      // Apply recommendations via MoneyPenny client
+      await moneyPenny.aggregates.applyRecommendations(suggestedPolicy);
+      
+      toast({
+        title: "Policy applied",
+        description: "Trading policy has been applied to console",
+      });
+    } catch (error) {
+      console.error("Apply policy error:", error);
+      toast({
+        title: "Application failed",
+        description: "Could not apply policy to console",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -116,10 +231,10 @@ export function ProfileOverlay() {
               onChange={handleFileUpload}
               className="hidden"
             />
-            <Button size="sm" variant="outline" className="gap-2" asChild>
+            <Button size="sm" variant="outline" className="gap-2" disabled={isUploading} asChild>
               <span>
-                <Upload className="h-3 w-3" />
-                Upload
+                {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                {isUploading ? 'Processing...' : 'Upload'}
               </span>
             </Button>
           </label>
@@ -164,20 +279,20 @@ export function ProfileOverlay() {
         </div>
         <div className="grid grid-cols-2 gap-3 text-xs">
           <div>
-            <p className="text-muted-foreground">Inventory Band</p>
-            <p className="font-mono">${suggestedPolicy.inventoryBand.min} - ${suggestedPolicy.inventoryBand.max}</p>
+            <p className="text-muted-foreground">Inventory Band (Q¢)</p>
+            <p className="font-mono">{suggestedPolicy.inventory_band?.min_qc || 250} - {suggestedPolicy.inventory_band?.max_qc || 2500}</p>
           </div>
           <div>
             <p className="text-muted-foreground">Min Edge (bps)</p>
-            <p className="font-mono">{suggestedPolicy.minEdgeBps}</p>
+            <p className="font-mono">{suggestedPolicy.min_edge_bps_baseline || 1.0}</p>
           </div>
           <div>
             <p className="text-muted-foreground">Daily Loss Limit</p>
-            <p className="font-mono">{suggestedPolicy.dailyLossLimit}%</p>
+            <p className="font-mono">{suggestedPolicy.daily_loss_limit_bps || 4.0} bps</p>
           </div>
           <div>
             <p className="text-muted-foreground">Max Notional</p>
-            <p className="font-mono">${suggestedPolicy.maxNotionalUsd}</p>
+            <p className="font-mono">${suggestedPolicy.max_notional_usd_day || 250.0}</p>
           </div>
         </div>
         <Button size="sm" className="w-full mt-3" onClick={applyToConsole}>
