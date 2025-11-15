@@ -18,6 +18,7 @@ import { AdvancedIntentForm } from "@/components/AdvancedIntentForm";
 import { FIOPaymentRequests } from "@/components/FIOPaymentRequests";
 import { X402CustodyDashboard } from "@/components/X402CustodyDashboard";
 import { NotificationStatus } from "@/components/NotificationStatus";
+import { PersonaManager } from "@/components/PersonaManager";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { MessageSquare, Activity, Play, Pause } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -256,6 +257,11 @@ export default function Console() {
         {/* MoneyPenny Chat */}
         <div className="mt-6">
           <MoneyPennyChat />
+        </div>
+
+        {/* Persona Management */}
+        <div className="mt-6">
+          <PersonaManager />
         </div>
 
         {/* FIO Handle Management */}
