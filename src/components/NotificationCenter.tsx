@@ -265,17 +265,52 @@ export const NotificationCenter = () => {
     }
   };
 
+  const playNotificationSound = () => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // First tone (higher pitch)
+      const oscillator1 = audioContext.createOscillator();
+      const gainNode1 = audioContext.createGain();
+      
+      oscillator1.connect(gainNode1);
+      gainNode1.connect(audioContext.destination);
+      
+      oscillator1.frequency.value = 800;
+      oscillator1.type = 'sine';
+      
+      gainNode1.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode1.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      
+      oscillator1.start(audioContext.currentTime);
+      oscillator1.stop(audioContext.currentTime + 0.3);
+      
+      // Second tone (slightly lower pitch for pleasant ding-ding)
+      const oscillator2 = audioContext.createOscillator();
+      const gainNode2 = audioContext.createGain();
+      
+      oscillator2.connect(gainNode2);
+      gainNode2.connect(audioContext.destination);
+      
+      oscillator2.frequency.value = 600;
+      oscillator2.type = 'sine';
+      
+      gainNode2.gain.setValueAtTime(0, audioContext.currentTime + 0.15);
+      gainNode2.gain.setValueAtTime(0.3, audioContext.currentTime + 0.15);
+      gainNode2.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+      
+      oscillator2.start(audioContext.currentTime + 0.15);
+      oscillator2.stop(audioContext.currentTime + 0.5);
+    } catch (e) {
+      console.log('Could not play notification sound:', e);
+    }
+  };
+
   const addNotification = (notification: Notification) => {
     setNotifications(prev => [notification, ...prev].slice(0, 100)); // Keep last 100
     
     if (settings.sound) {
-      // Play notification sound (if browser supports it)
-      try {
-        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZRQ0PVqzn77BdGAg+ltrzxnMpBSl+zPLaizsIGGS56+ikUBELTKXh8bllHAU7k9n0zoY1Bx1uv+/mnkYPDlWq5O+yYBkIP5jb88h0KwUpfsvy2os8CFdmvuvopVISC0yl4fG5ZRwFO5PZ9M6HNgcdb7/v5Z5GDw5Vqufus2AZBz+Y2/PIdicFKoHM8tuMOwdWZr/t6KFSEgtMpeHxuWUcBT2U2fTPhzYHHW+/8OWdRg8OVarn77NgGQc/mNvzyHYnBSqBzPLajDwHVma/7eihUhILTKXh8bllHAU9lNn0z4c2Bx5vv/DlnUYPDlWq5++zYBkHP5jb88h2JwUqgczy2ow8B1Zmv+3ooVISC0yl4fG5ZRwFPZTZ9M+HNgceb7/w5Z1GDw5VqufvsmAZBz+Y2/PIdicFKoHM8tqMPAdWZr/t6KFSEgtMpeHxuWUcBT2U2fTPhzYHHm+/8OWdRg8OVarn77JgGQc/mNvzyHYnBSqBzPLajDwHVma/7eihUhILTKXh8bllHAU9lNn0z4c2Bx5vv/DlnUYPDlWq5++yYBkHP5jb88h2JwUqgczy2ow8B1Zmv+3ooVISC0yl4fG5ZRwFPZTZ9M+HNgceb7/w5Z1GDw5VqufvsmAZBz+Y2/PIdicFKoHM8tqMPAdWZr/t6KFSEgtMpeHxuWUcBT2U2fTPhzYHHm+/8OWdRg8OVarn77JgGQc/mNvzyHYnBSqBzPLajDwHVma/7eihUhILTKXh8bllHAU9lNn0z4c2Bx5vv/DlnUYPDlWq5++yYBkHP5jb88h2JwUqgczy2ow8B1Zmv+3ooVISC0yl4fG5ZRwFPZTZ9M+HNgceb7/w5Z1GDw5VqufvsmAZBz+Y2/PIdicFKoHM8tqMPAdWZr/t6KFSEgtMpeHxuWUcBT2U2fTPhzYHHm+/8OWdRg8OVarn77JgGQc/mNvzyHYnBSqBzPLajDwHVma/7eihUhILTKXh8bllHAU9lNn0z4c2Bx5vv/DlnUYPDlWq5++yYBkHP5jb88h2JwUqgczy2ow8B1Zmv+3ooVISC0yl4fG5ZRwFPZTZ9M+HNgceb7/w5Z1GDw5VqufvsmAZBz+Y2/PIdicFKoHM8tqMPAdWZr/t6KFSEgtMpeHxuWUcBT2U2fTPhzYHHm+/8OWdRg8OVarn77JgGQc/mNvzyHYnBSqBzPLajDwHVma/7eihUhILTKXh8bllHAU9lNn0z4c2Bx5vv/DlnUYPDlWq5++yYBkHP5jb88h2JwUqgczy2ow8B1Zmv+3ooVISC0yl4fG5ZRwFPZTZ9M+HNgceb7/w5Z1GDw5VqufvsmAZBz+Y2/PIdicFKoHM8tqMPAdWZr/t6KFSEgtMpeHxuWUcBT2U2fTPhzYHHm+/8OWdRg8=');
-        audio.play().catch(() => {});
-      } catch (error) {
-        // Ignore audio errors
-      }
+      playNotificationSound();
     }
   };
 
