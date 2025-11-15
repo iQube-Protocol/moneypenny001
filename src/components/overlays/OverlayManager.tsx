@@ -26,7 +26,10 @@ export function OverlayManager() {
   return (
     <Sheet open={!!activeOverlay} onOpenChange={(open) => !open && closeOverlay()}>
       <SheetOverlay className="bg-background/80 backdrop-blur-sm" />
-      <SheetContent side="right" className="w-[800px] max-w-[90vw] glass-card border-l border-primary/20 p-6">
+      <SheetContent 
+        side="left" 
+        className="w-[calc(100vw-14rem)] left-14 h-[600px] top-auto bottom-[4.5rem] glass-card border-r border-primary/20 p-6"
+      >
         {renderOverlay()}
       </SheetContent>
     </Sheet>
