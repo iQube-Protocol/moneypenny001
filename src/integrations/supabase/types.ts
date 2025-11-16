@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      bank_statements: {
+        Row: {
+          closing_balance: number | null
+          created_at: string | null
+          file_name: string
+          file_path: string
+          id: string
+          parsed_at: string | null
+          period_end: string | null
+          period_start: string | null
+          user_id: string
+        }
+        Insert: {
+          closing_balance?: number | null
+          created_at?: string | null
+          file_name: string
+          file_path: string
+          id?: string
+          parsed_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          user_id: string
+        }
+        Update: {
+          closing_balance?: number | null
+          created_at?: string | null
+          file_name?: string
+          file_path?: string
+          id?: string
+          parsed_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       cache_store: {
         Row: {
           created_at: string | null
@@ -32,6 +68,45 @@ export type Database = {
           expires_at?: string
           key?: string
           value?: string
+        }
+        Relationships: []
+      }
+      financial_aggregates: {
+        Row: {
+          avg_daily_surplus: number | null
+          cash_buffer_days: number | null
+          closing_balance: number | null
+          computed_at: string | null
+          confidence_score: number | null
+          id: string
+          surplus_volatility: number | null
+          top_categories: Json | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          avg_daily_surplus?: number | null
+          cash_buffer_days?: number | null
+          closing_balance?: number | null
+          computed_at?: string | null
+          confidence_score?: number | null
+          id?: string
+          surplus_volatility?: number | null
+          top_categories?: Json | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          avg_daily_surplus?: number | null
+          cash_buffer_days?: number | null
+          closing_balance?: number | null
+          computed_at?: string | null
+          confidence_score?: number | null
+          id?: string
+          surplus_volatility?: number | null
+          top_categories?: Json | null
+          updated_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -147,6 +222,86 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      trading_recommendations: {
+        Row: {
+          created_at: string | null
+          daily_loss_limit_bps: number
+          id: string
+          inventory_max: number
+          inventory_min: number
+          max_notional_usd: number
+          min_edge_bps: number
+          reasoning: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          daily_loss_limit_bps: number
+          id?: string
+          inventory_max: number
+          inventory_min: number
+          max_notional_usd: number
+          min_edge_bps: number
+          reasoning?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          daily_loss_limit_bps?: number
+          id?: string
+          inventory_max?: number
+          inventory_min?: number
+          max_notional_usd?: number
+          min_edge_bps?: number
+          reasoning?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          statement_id: string
+          transaction_date: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          statement_id: string
+          transaction_date: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          statement_id?: string
+          transaction_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_statement_id_fkey"
+            columns: ["statement_id"]
+            isOneToOne: false
+            referencedRelation: "bank_statements"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
