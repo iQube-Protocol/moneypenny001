@@ -17,22 +17,36 @@ const timeframes = ["1m", "15m", "30m", "1h", "24h", "48h", "1w", "1M"] as const
 export function CaptureSparkline({ data: initialData, totalQc: initialQc }: CaptureSparklineProps) {
   const [selectedTimeframe, setSelectedTimeframe] = useState<typeof timeframes[number]>("24h");
   const [simulatedData, setSimulatedData] = useState<DataPoint[]>(() => {
-    // Initialize with 50 data points
+    // Initialize with 144 data points (24 hours at 10-minute intervals)
     const now = Date.now();
-    return Array.from({ length: 50 }, (_, i) => ({
-      timestamp: new Date(now - (49 - i) * 2000).toISOString(),
-      captureBps: Math.random() * 15 + 5 // 5-20 bps capture
-    }));
+    const pointsCount = 144;
+    const interval = 10 * 60 * 1000; // 10 minutes in milliseconds
+    
+    return Array.from({ length: pointsCount }, (_, i) => {
+      const timestamp = now - (pointsCount - 1 - i) * interval;
+      // Simulate varying capture rates with some randomness
+      const baseCapture = 12; // Average 12 bps
+      const variance = Math.sin(i / 20) * 5; // Add wave pattern
+      const randomness = (Math.random() - 0.5) * 8;
+      
+      return {
+        timestamp: new Date(timestamp).toISOString(),
+        captureBps: Math.max(3, Math.min(20, baseCapture + variance + randomness))
+      };
+    });
   });
   const [qcBalance, setQcBalance] = useState(1247.83);
 
-  // Simulate HFT trades
+  // Simulate HFT trades - add new point every 10 minutes (sped up to 5 seconds for demo)
   useEffect(() => {
     const interval = setInterval(() => {
-      const newCapture = Math.random() * 15 + 5; // 5-20 bps
-      const qcEarned = (Math.random() * 0.5 + 0.1); // 0.1-0.6 Q¢ per trade
+      const baseCapture = 12;
+      const variance = (Math.random() - 0.5) * 8;
+      const newCapture = Math.max(3, Math.min(20, baseCapture + variance));
+      const qcEarned = (Math.random() * 0.5 + 0.1); // 0.1-0.6 Q¢ per period
       
       setSimulatedData(prev => {
+        // Remove oldest, add newest (sliding 24-hour window)
         const updated = [...prev.slice(1), {
           timestamp: new Date().toISOString(),
           captureBps: newCapture
@@ -41,7 +55,7 @@ export function CaptureSparkline({ data: initialData, totalQc: initialQc }: Capt
       });
       
       setQcBalance(prev => prev + qcEarned);
-    }, 2000); // New trade every 2 seconds
+    }, 5000); // Update every 5 seconds to show activity (represents 10-min intervals)
 
     return () => clearInterval(interval);
   }, []);
