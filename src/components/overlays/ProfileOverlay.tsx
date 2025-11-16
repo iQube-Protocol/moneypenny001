@@ -166,9 +166,6 @@ export function ProfileOverlay() {
       // Save policy to localStorage for intent form
       localStorage.setItem('moneypenny_applied_config', JSON.stringify(suggestedPolicy));
       
-      // Apply recommendations via MoneyPenny client
-      await moneyPenny.aggregates.applyRecommendations(suggestedPolicy);
-      
       toast({
         title: "Policy applied",
         description: "Trading policy has been applied to console",
