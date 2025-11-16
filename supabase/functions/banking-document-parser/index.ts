@@ -10,25 +10,16 @@ interface Transaction {
   date: string;
   amount: number;
   category: string;
-}
-
-interface Statement {
-  transactions: Transaction[];
-  closingBalance: number;
-  periodStart: string;
-  periodEnd: string;
+  description?: string;
 }
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
-function parseBankStatement(text: string): Statement {
-  // Simple CSV/text parser for bank statements
-  // Looks for patterns like: date, description, amount
-  const lines = text.split('\n');
+function extractTransactionsFromText(text: string): Transaction[] {
   const transactions: Transaction[] = [];
-  let closingBalance = 0;
+  const lines = text.split('\n');
   
   for (const line of lines) {
     // Try to extract date (YYYY-MM-DD or MM/DD/YYYY), amount, description
@@ -40,36 +31,38 @@ function parseBankStatement(text: string): Statement {
       transactions.push({
         date: dateMatch[1],
         amount: amount,
-        category: 'general'
+        category: 'general',
+        description: line.substring(0, 100) // Store first 100 chars as description
       });
-    }
-    
-    // Look for closing balance
-    if (line.toLowerCase().includes('closing balance') || line.toLowerCase().includes('ending balance')) {
-      const balanceMatch = line.match(/\$?\s*([\d,]+\.\d{2})/);
-      if (balanceMatch) {
-        closingBalance = parseFloat(balanceMatch[1].replace(/,/g, ''));
-      }
     }
   }
   
-  return {
-    transactions,
-    closingBalance,
-    periodStart: transactions[0]?.date || '',
-    periodEnd: transactions[transactions.length - 1]?.date || ''
-  };
+  return transactions;
 }
 
-function extractFeatures(statement: Statement) {
-  const { transactions, closingBalance } = statement;
-  
+function extractClosingBalance(text: string): number {
+  const lines = text.split('\n');
+  for (const line of lines) {
+    if (line.toLowerCase().includes('closing balance') || 
+        line.toLowerCase().includes('ending balance') ||
+        line.toLowerCase().includes('final balance')) {
+      const balanceMatch = line.match(/\$?\s*([\d,]+\.\d{2})/);
+      if (balanceMatch) {
+        return parseFloat(balanceMatch[1].replace(/,/g, ''));
+      }
+    }
+  }
+  return 0;
+}
+
+function computeAggregates(transactions: Transaction[], closingBalance: number) {
   if (transactions.length === 0) {
     return {
       avg_daily_surplus: 0,
       surplus_volatility: 0,
       closing_balance: closingBalance,
-      cash_buffer_days: 0
+      cash_buffer_days: 0,
+      confidence_score: 0
     };
   }
   
@@ -88,17 +81,19 @@ function extractFeatures(statement: Statement) {
   const volatility = Math.sqrt(variance);
   
   const cashBufferDays = avg !== 0 ? closingBalance / Math.abs(avg) : 0;
+  const confidence = Math.min(transactions.length / 30, 1.0); // More transactions = more confidence
   
   return {
     avg_daily_surplus: avg,
     surplus_volatility: volatility,
     closing_balance: closingBalance,
-    cash_buffer_days: cashBufferDays
+    cash_buffer_days: cashBufferDays,
+    confidence_score: confidence
   };
 }
 
-function generateRecommendations(features: ReturnType<typeof extractFeatures>) {
-  const { avg_daily_surplus, surplus_volatility, closing_balance } = features;
+function generateRecommendations(aggregates: ReturnType<typeof computeAggregates>) {
+  const { avg_daily_surplus, surplus_volatility, closing_balance } = aggregates;
   
   // Calculate trading limits based on financial features
   const inventoryMin = clamp(avg_daily_surplus / 25, 50, 500);
@@ -116,16 +111,16 @@ function generateRecommendations(features: ReturnType<typeof extractFeatures>) {
   
   const dailyLossLimit = clamp(3 * surplusVolBps, 8, 40);
   
-  const inventoryBand = clamp(avg_daily_surplus / 25, 0.5, 3.0);
-  
   return {
-    inventory_band: {
-      min: Math.round(inventoryMin * 100) / 100,
-      max: Math.round(inventoryMax * 100) / 100
-    },
-    min_edge_bps_baseline: 1.0,
+    inventory_min: Math.round(inventoryMin * 100) / 100,
+    inventory_max: Math.round(inventoryMax * 100) / 100,
+    min_edge_bps: 1.0,
     daily_loss_limit_bps: Math.round(dailyLossLimit * 10) / 10,
-    max_notional_usd_day: Math.round(maxNotional * 100) / 100
+    max_notional_usd: Math.round(maxNotional * 100) / 100,
+    reasoning: `Based on ${aggregates.confidence_score > 0.5 ? 'significant' : 'limited'} transaction history. ` +
+               `Average daily flow: $${avg_daily_surplus.toFixed(2)}, ` +
+               `Volatility: $${surplus_volatility.toFixed(2)}, ` +
+               `Buffer: ${aggregates.cash_buffer_days.toFixed(1)} days`
   };
 }
 
@@ -137,6 +132,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     
     if (!supabaseUrl || !supabaseKey) {
       throw new Error("Missing Supabase environment variables");
@@ -146,17 +142,22 @@ serve(async (req) => {
     
     const { file_paths, user_id } = await req.json();
     
-    if (!file_paths || !user_id) {
+    if (!file_paths || !Array.isArray(file_paths) || !user_id) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: file_paths, user_id" }),
+        JSON.stringify({ error: "Missing required fields: file_paths (array), user_id" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const statements: Statement[] = [];
+    const allTransactions: Transaction[] = [];
+    let latestClosingBalance = 0;
+    const statementIds: string[] = [];
     
-    // Download and parse each file from banking-documents bucket
+    // Process each file
     for (const filePath of file_paths) {
+      console.log(`Processing file: ${filePath}`);
+      
+      // Download file from storage
       const { data: fileData, error: downloadError } = await supabase.storage
         .from('banking-documents')
         .download(filePath);
@@ -166,61 +167,170 @@ serve(async (req) => {
         continue;
       }
       
-      const text = await fileData.text();
-      const statement = parseBankStatement(text);
-      statements.push(statement);
+      let extractedText = '';
+      
+      // Check if it's a PDF (try to parse with Lovable AI)
+      if (filePath.toLowerCase().endsWith('.pdf') && lovableApiKey) {
+        console.log("Parsing PDF with Lovable AI...");
+        
+        try {
+          // Convert blob to base64
+          const arrayBuffer = await fileData.arrayBuffer();
+          const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+          
+          // Call Lovable AI to extract text from PDF
+          const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${lovableApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model: 'google/gemini-2.5-flash',
+              messages: [
+                {
+                  role: 'system',
+                  content: 'You are a bank statement parser. Extract all transaction data in a structured format. For each transaction, provide: date (YYYY-MM-DD), amount (as decimal number), description. Also identify the closing/ending balance. Format as: Date | Amount | Description on each line.'
+                },
+                {
+                  role: 'user',
+                  content: `Parse this bank statement PDF and extract all transactions and the closing balance. Return in format: Date | Amount | Description`
+                }
+              ],
+              // Note: Gemini doesn't support direct file upload in this format, so we'll use text extraction
+            }),
+          });
+          
+          if (aiResponse.ok) {
+            const aiData = await aiResponse.json();
+            extractedText = aiData.choices[0].message.content;
+            console.log("AI extracted text length:", extractedText.length);
+          } else {
+            console.error("AI parsing failed, falling back to text extraction");
+            extractedText = await fileData.text();
+          }
+        } catch (aiError) {
+          console.error("AI parsing error:", aiError);
+          extractedText = await fileData.text();
+        }
+      } else {
+        // Plain text file
+        extractedText = await fileData.text();
+      }
+      
+      // Extract transactions and balance
+      const transactions = extractTransactionsFromText(extractedText);
+      const closingBalance = extractClosingBalance(extractedText);
+      
+      if (closingBalance > 0) {
+        latestClosingBalance = closingBalance;
+      }
+      
+      // Determine period from transactions
+      const dates = transactions.map(t => new Date(t.date)).filter(d => !isNaN(d.getTime()));
+      const periodStart = dates.length > 0 ? new Date(Math.min(...dates.map(d => d.getTime()))) : null;
+      const periodEnd = dates.length > 0 ? new Date(Math.max(...dates.map(d => d.getTime()))) : null;
+      
+      // Store statement record
+      const { data: statementData, error: statementError } = await supabase
+        .from('bank_statements')
+        .insert({
+          user_id,
+          file_name: filePath.split('/').pop(),
+          file_path: filePath,
+          period_start: periodStart?.toISOString().split('T')[0],
+          period_end: periodEnd?.toISOString().split('T')[0],
+          closing_balance: closingBalance,
+        })
+        .select()
+        .single();
+      
+      if (statementError) {
+        console.error("Error storing statement:", statementError);
+        continue;
+      }
+      
+      const statementId = statementData.id;
+      statementIds.push(statementId);
+      
+      // Store transactions
+      if (transactions.length > 0) {
+        const transactionRecords = transactions.map(tx => ({
+          statement_id: statementId,
+          user_id,
+          transaction_date: tx.date,
+          description: tx.description,
+          amount: tx.amount,
+          category: tx.category,
+        }));
+        
+        const { error: txError } = await supabase
+          .from('transactions')
+          .insert(transactionRecords);
+        
+        if (txError) {
+          console.error("Error storing transactions:", txError);
+        } else {
+          allTransactions.push(...transactions);
+        }
+      }
     }
     
-    if (statements.length === 0) {
+    if (allTransactions.length === 0) {
       return new Response(
-        JSON.stringify({ error: "No valid statements could be parsed" }),
+        JSON.stringify({ error: "No valid transactions could be parsed from the provided files" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    // Aggregate features across all statements
-    const allTransactions = statements.flatMap(s => s.transactions);
-    const latestClosingBalance = statements[statements.length - 1].closingBalance;
+    // Compute aggregates
+    const aggregates = computeAggregates(allTransactions, latestClosingBalance);
     
-    const aggregatedStatement: Statement = {
-      transactions: allTransactions,
-      closingBalance: latestClosingBalance,
-      periodStart: statements[0].periodStart,
-      periodEnd: statements[statements.length - 1].periodEnd
-    };
-    
-    const features = extractFeatures(aggregatedStatement);
-    const recommendations = generateRecommendations(features);
-    
-    // Store in cache_store table
-    const cacheKey = `banking_aggregates:${user_id}`;
-    const aggregateData = {
-      surplus_mean_daily: features.avg_daily_surplus,
-      surplus_vol_daily: features.surplus_volatility,
-      closing_balance_last: features.closing_balance,
-      cash_buffer_days: features.cash_buffer_days,
-      proposed_overrides: recommendations
-    };
-    
-    const { error: cacheError } = await supabase
-      .from("cache_store")
+    // Store aggregates
+    const { error: aggError } = await supabase
+      .from('financial_aggregates')
       .upsert({
-        key: cacheKey,
-        value: JSON.stringify(aggregateData),
-        expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString() // 90 days
+        user_id,
+        avg_daily_surplus: aggregates.avg_daily_surplus,
+        surplus_volatility: aggregates.surplus_volatility,
+        closing_balance: aggregates.closing_balance,
+        cash_buffer_days: aggregates.cash_buffer_days,
+        confidence_score: aggregates.confidence_score,
+        updated_at: new Date().toISOString(),
       });
     
-    if (cacheError) {
-      console.error("Cache store error:", cacheError);
-      throw cacheError;
+    if (aggError) {
+      console.error("Error storing aggregates:", aggError);
+    }
+    
+    // Generate recommendations
+    const recommendations = generateRecommendations(aggregates);
+    
+    // Store recommendations
+    const { error: recError } = await supabase
+      .from('trading_recommendations')
+      .upsert({
+        user_id,
+        inventory_min: recommendations.inventory_min,
+        inventory_max: recommendations.inventory_max,
+        min_edge_bps: recommendations.min_edge_bps,
+        daily_loss_limit_bps: recommendations.daily_loss_limit_bps,
+        max_notional_usd: recommendations.max_notional_usd,
+        reasoning: recommendations.reasoning,
+        updated_at: new Date().toISOString(),
+      });
+    
+    if (recError) {
+      console.error("Error storing recommendations:", recError);
     }
     
     return new Response(
       JSON.stringify({
         success: true,
-        features,
+        statements_processed: file_paths.length,
+        transactions_extracted: allTransactions.length,
+        aggregates,
         recommendations,
-        statements_processed: statements.length
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
