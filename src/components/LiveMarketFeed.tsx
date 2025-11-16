@@ -8,6 +8,7 @@ import { StreamEvent, QuoteEvent, FillEvent, PnLEvent } from "@/lib/aigent/money
 import { ChainChip } from "./ChainChip";
 import { EdgeGauge } from "./EdgeGauge";
 import { CaptureSparkline } from "./CaptureSparkline";
+import { useMarketFeedStore } from "@/stores/marketFeedStore";
 
 const CHAIN_ICONS = {
   ethereum: '⟠',
@@ -33,12 +34,11 @@ const AVAILABLE_CHAINS = ['ethereum', 'arbitrum', 'base', 'polygon', 'optimism',
 
 export function LiveMarketFeed() {
   const moneyPenny = useMoneyPenny();
-  const [selectedChains, setSelectedChains] = useState<string[]>(['ethereum', 'arbitrum', 'base', 'polygon', 'solana']);
+  const { selectedChains, qcentEarned, setSelectedChains, addQcentEarned } = useMarketFeedStore();
   const [quotes, setQuotes] = useState<QuoteEvent[]>([]);
   const [fills, setFills] = useState<FillEvent[]>([]);
   const [captures, setCaptures] = useState<number[]>([]);
   const [currentEdge, setCurrentEdge] = useState<number>(0);
-  const [qcentEarned, setQcentEarned] = useState<number>(0);
   const [isConnected, setIsConnected] = useState(false);
   const [mode, setMode] = useState<'SIM' | 'LIVE'>('SIM');
   
@@ -92,21 +92,20 @@ export function LiveMarketFeed() {
       // Calculate Q¢ earned from capture
       if (pnl.capture_bps && pnl.turnover_usd) {
         const qc = (pnl.capture_bps / 10000) * pnl.turnover_usd / (pnl.peg_usd || 0.01);
-        setQcentEarned(prev => prev + qc);
+        addQcentEarned(qc);
       }
     }
   };
 
   const toggleChain = (chain: string) => {
-    setSelectedChains(prev => {
-      if (prev.includes(chain)) {
-        // Don't allow removing last chain
-        if (prev.length === 1) return prev;
-        return prev.filter(c => c !== chain);
-      } else {
-        return [...prev, chain];
-      }
-    });
+    const currentChains = selectedChains;
+    if (currentChains.includes(chain)) {
+      // Don't allow removing last chain
+      if (currentChains.length === 1) return;
+      setSelectedChains(currentChains.filter(c => c !== chain));
+    } else {
+      setSelectedChains([...currentChains, chain]);
+    }
   };
 
   const restartStream = () => {
