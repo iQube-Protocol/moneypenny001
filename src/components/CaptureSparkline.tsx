@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface DataPoint {
   timestamp: string;
@@ -8,14 +8,46 @@ interface DataPoint {
 }
 
 interface CaptureSparklineProps {
-  data: DataPoint[];
-  totalQc: number;
+  data?: DataPoint[];
+  totalQc?: number;
 }
 
 const timeframes = ["1m", "15m", "30m", "1h", "24h", "48h", "1w", "1M"] as const;
 
-export function CaptureSparkline({ data, totalQc }: CaptureSparklineProps) {
+export function CaptureSparkline({ data: initialData, totalQc: initialQc }: CaptureSparklineProps) {
   const [selectedTimeframe, setSelectedTimeframe] = useState<typeof timeframes[number]>("24h");
+  const [simulatedData, setSimulatedData] = useState<DataPoint[]>(() => {
+    // Initialize with 50 data points
+    const now = Date.now();
+    return Array.from({ length: 50 }, (_, i) => ({
+      timestamp: new Date(now - (49 - i) * 2000).toISOString(),
+      captureBps: Math.random() * 15 + 5 // 5-20 bps capture
+    }));
+  });
+  const [qcBalance, setQcBalance] = useState(1247.83);
+
+  // Simulate HFT trades
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const newCapture = Math.random() * 15 + 5; // 5-20 bps
+      const qcEarned = (Math.random() * 0.5 + 0.1); // 0.1-0.6 Q¢ per trade
+      
+      setSimulatedData(prev => {
+        const updated = [...prev.slice(1), {
+          timestamp: new Date().toISOString(),
+          captureBps: newCapture
+        }];
+        return updated;
+      });
+      
+      setQcBalance(prev => prev + qcEarned);
+    }, 2000); // New trade every 2 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  const data = initialData || simulatedData;
+  const totalQc = initialQc || qcBalance;
 
   const maxCapture = Math.max(...data.map(d => d.captureBps), 1);
   const minCapture = Math.min(...data.map(d => d.captureBps), 0);
