@@ -17,16 +17,16 @@ const timeframes = ["1m", "15m", "30m", "1h", "24h", "48h", "1w", "1M"] as const
 export function CaptureSparkline({ data: initialData, totalQc: initialQc }: CaptureSparklineProps) {
   const [selectedTimeframe, setSelectedTimeframe] = useState<typeof timeframes[number]>("24h");
   const [simulatedData, setSimulatedData] = useState<DataPoint[]>(() => {
-    // Initialize with 144 data points (24 hours at 10-minute intervals)
+    // Initialize with 72 data points (24 hours at 20-minute intervals for better performance)
     const now = Date.now();
-    const pointsCount = 144;
-    const interval = 10 * 60 * 1000; // 10 minutes in milliseconds
+    const pointsCount = 72;
+    const interval = 20 * 60 * 1000; // 20 minutes in milliseconds
     
     return Array.from({ length: pointsCount }, (_, i) => {
       const timestamp = now - (pointsCount - 1 - i) * interval;
       // Simulate varying capture rates with some randomness
       const baseCapture = 12; // Average 12 bps
-      const variance = Math.sin(i / 20) * 5; // Add wave pattern
+      const variance = Math.sin(i / 10) * 5; // Add wave pattern
       const randomness = (Math.random() - 0.5) * 8;
       
       return {
@@ -92,7 +92,7 @@ export function CaptureSparkline({ data: initialData, totalQc: initialQc }: Capt
         <div className="text-xs text-muted-foreground">Total Earned</div>
       </div>
 
-      <div className="relative h-32 flex items-end gap-1">
+      <div className="relative h-32 flex items-end gap-0.5">
         {data.map((point, idx) => {
           const heightPercent = range > 0 
             ? ((point.captureBps - minCapture) / range) * 100 
@@ -100,8 +100,8 @@ export function CaptureSparkline({ data: initialData, totalQc: initialQc }: Capt
           
           return (
             <div
-              key={idx}
-              className="flex-1 group relative"
+              key={`${point.timestamp}-${idx}`}
+              className="flex-1 group relative min-w-[2px]"
             >
               <div
                 className={`w-full rounded-t transition-all duration-300 ${
@@ -111,7 +111,7 @@ export function CaptureSparkline({ data: initialData, totalQc: initialQc }: Capt
                 }`}
                 style={{ height: `${Math.max(heightPercent, 2)}%` }}
               />
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block">
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10">
                 <div className="bg-popover text-popover-foreground text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap">
                   <div className="font-mono">{point.captureBps.toFixed(2)} bps</div>
                   <div className="text-[10px] text-muted-foreground">
