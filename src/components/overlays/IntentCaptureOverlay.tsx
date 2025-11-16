@@ -9,10 +9,6 @@ interface IntentCaptureOverlayProps {
 }
 
 export function IntentCaptureOverlay({ suggestedStrategy }: IntentCaptureOverlayProps) {
-  const captureData = [];
-  const fills = [];
-  const totalQc = 0;
-
   return (
     <div className="space-y-4 h-full overflow-y-auto">
       <div>
@@ -25,8 +21,8 @@ export function IntentCaptureOverlay({ suggestedStrategy }: IntentCaptureOverlay
       <AdvancedIntentForm availableChains={chains} suggestedStrategy={suggestedStrategy} />
       
       <div className="grid grid-cols-1 gap-4 mt-4">
-        <CaptureSparkline data={captureData} totalQc={totalQc} />
-        <FillsTicker fills={fills} />
+        <CaptureSparkline />
+        <FillsTicker fills={[]} />
       </div>
     </div>
   );
