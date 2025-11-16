@@ -127,19 +127,21 @@ export function ProfileOverlay() {
         console.error("Parser error:", parseError);
         toast({
           title: "Analysis failed",
-          description: "Could not analyze bank statements. Using uploaded files for future analysis.",
+          description: "Could not analyze bank statements. Please try again.",
           variant: "destructive",
         });
         return;
       }
       
+      console.log('Parse result:', parseResult);
+      
+      // Refresh aggregates after successful parsing
+      await refetchAggregates();
+      
       toast({
         title: "Documents analyzed",
-        description: `${files.length} file(s) processed. Financial profile updated.`,
+        description: `${files.length} file(s) processed. Extracted ${parseResult?.transactions_extracted || 0} transactions.`,
       });
-      
-      // Refresh aggregates
-      await refetchAggregates();
       
     } catch (error) {
       console.error("Upload error:", error);
