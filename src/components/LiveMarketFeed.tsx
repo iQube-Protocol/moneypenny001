@@ -137,7 +137,12 @@ export function LiveMarketFeed() {
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-foreground">Live Market Feed</h2>
-            <Badge variant={isConnected ? "default" : "secondary"} className="gap-1">
+            <Badge 
+              variant="outline" 
+              className={`gap-1 backdrop-blur-sm bg-background/30 border-border/40 ${
+                isConnected ? 'text-success border-success/20' : 'text-muted-foreground'
+              }`}
+            >
               <Activity className={`h-3 w-3 ${isConnected ? 'animate-pulse' : ''}`} />
               {isConnected ? 'Connected' : 'Connecting...'}
             </Badge>
