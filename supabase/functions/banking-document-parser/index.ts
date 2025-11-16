@@ -144,22 +144,22 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    const { bucket_id, file_ids, user_id } = await req.json();
+    const { file_paths, user_id } = await req.json();
     
-    if (!bucket_id || !file_ids || !user_id) {
+    if (!file_paths || !user_id) {
       return new Response(
-        JSON.stringify({ error: "Missing required fields: bucket_id, file_ids, user_id" }),
+        JSON.stringify({ error: "Missing required fields: file_paths, user_id" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const statements: Statement[] = [];
     
-    // Download and parse each file
-    for (const fileId of file_ids) {
+    // Download and parse each file from banking-documents bucket
+    for (const filePath of file_paths) {
       const { data: fileData, error: downloadError } = await supabase.storage
-        .from(bucket_id)
-        .download(fileId);
+        .from('banking-documents')
+        .download(filePath);
       
       if (downloadError) {
         console.error("Download error:", downloadError);

@@ -83,24 +83,26 @@ export function ProfileOverlay() {
         return;
       }
 
-      // Initialize bucket for banking documents
-      const bucket = await moneyPenny.storage.initBucket('banking-docs');
-      
-      const fileIds: string[] = [];
+      const uploadedPaths: string[] = [];
       const uploadedDocs: BankingDocument[] = [];
       
-      // Upload each file
+      // Upload each file to Supabase Storage
       for (const file of Array.from(files)) {
-        const uploadedFile = await moneyPenny.storage.uploadFileComplete(
-          bucket.bucket_id,
-          file,
-          (progress) => console.log(`Upload progress: ${progress}%`)
-        );
+        const filePath = `${user.id}/${Date.now()}-${file.name}`;
         
-        fileIds.push(uploadedFile.file_id);
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('banking-documents')
+          .upload(filePath, file);
+        
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          throw new Error(`Failed to upload ${file.name}: ${uploadError.message}`);
+        }
+        
+        uploadedPaths.push(filePath);
         
         uploadedDocs.push({
-          id: uploadedFile.file_id,
+          id: filePath,
           name: file.name,
           month: new Date().toISOString().slice(0, 7),
           size: `${(file.size / 1024).toFixed(1)} KB`,
@@ -115,8 +117,7 @@ export function ProfileOverlay() {
         'banking-document-parser',
         {
           body: {
-            bucket_id: bucket.bucket_id,
-            file_ids: fileIds,
+            file_paths: uploadedPaths,
             user_id: user.id,
           }
         }
