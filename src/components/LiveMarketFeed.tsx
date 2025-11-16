@@ -19,6 +19,16 @@ const CHAIN_ICONS = {
   bitcoin: '₿'
 };
 
+const CHAIN_LABELS = {
+  ethereum: 'ETH',
+  arbitrum: 'ARB',
+  base: 'BASE',
+  polygon: 'POLY',
+  optimism: 'OP',
+  solana: 'SOL',
+  bitcoin: 'BTC'
+};
+
 const AVAILABLE_CHAINS = ['ethereum', 'arbitrum', 'base', 'polygon', 'optimism', 'solana', 'bitcoin'];
 
 export function LiveMarketFeed() {
@@ -143,7 +153,7 @@ export function LiveMarketFeed() {
                 key={chain}
                 onClick={() => toggleChain(chain)}
                 className={`
-                  px-2 py-1 rounded text-sm font-medium transition-all
+                  px-2 py-1 rounded text-xs font-medium transition-all flex items-center gap-1
                   ${selectedChains.includes(chain)
                     ? 'bg-primary/20 text-primary border border-primary/30'
                     : 'bg-muted/30 text-muted-foreground border border-border/30 opacity-50'
@@ -151,7 +161,8 @@ export function LiveMarketFeed() {
                 `}
                 title={chain}
               >
-                {CHAIN_ICONS[chain as keyof typeof CHAIN_ICONS]}
+                <span>{CHAIN_ICONS[chain as keyof typeof CHAIN_ICONS]}</span>
+                <span className="font-semibold">{CHAIN_LABELS[chain as keyof typeof CHAIN_LABELS]}</span>
               </button>
             ))}
           </div>
