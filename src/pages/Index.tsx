@@ -17,7 +17,7 @@ export default function Index() {
                 <Button variant="outline" size="sm">Console</Button>
               </Link>
               <Link to="/profile">
-                <Button variant="outline" size="sm">Profile</Button>
+                
               </Link>
               <WalletDrawer />
             </div>
