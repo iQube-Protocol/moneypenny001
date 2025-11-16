@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import { WalletDrawer } from "@/components/WalletDrawer";
 import { MoneyPennyChat } from "@/components/MoneyPennyChat";
 import { OverlayManager } from "@/components/overlays/OverlayManager";
@@ -6,7 +5,6 @@ import { NotificationCenter } from "@/components/NotificationCenter";
 import { LiveMarketFeed } from "@/components/LiveMarketFeed";
 import { useOverlayManager } from "@/hooks/use-overlay-manager";
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 export default function Console() {
@@ -36,6 +34,7 @@ export default function Console() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <NotificationCenter />
               <ToggleGroup type="single" value={activeTab} onValueChange={(value) => value && setActiveTab(value)} size="xs">
                 <ToggleGroupItem value="chat" aria-label="Chat">
                   Chat
@@ -44,10 +43,6 @@ export default function Console() {
                   Feed
                 </ToggleGroupItem>
               </ToggleGroup>
-              <NotificationCenter />
-              <Link to="/profile">
-                <Button variant="outline" size="sm">Profile</Button>
-              </Link>
               <WalletDrawer />
             </div>
           </div>
