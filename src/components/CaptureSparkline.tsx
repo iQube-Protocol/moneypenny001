@@ -63,5 +63,29 @@ export function CaptureSparkline({
   const maxCapture = Math.max(...data.map(d => d.captureBps), 1);
   const minCapture = Math.min(...data.map(d => d.captureBps), 0);
   const range = maxCapture - minCapture;
-  return;
+  
+  return (
+    <Card className="glass-card p-4">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-foreground">24-Hour Trade History</h3>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs">{data.length} periods</Badge>
+          <Badge variant="default" className="text-xs">{totalQc.toFixed(2)} Q¢</Badge>
+        </div>
+      </div>
+      <div className="relative h-32 flex items-end gap-px">
+        {data.map((point, idx) => {
+          const heightPercent = range > 0 ? ((point.captureBps - minCapture) / range) * 100 : 50;
+          return (
+            <div
+              key={idx}
+              className="flex-1 bg-primary/60 hover:bg-primary transition-all rounded-t"
+              style={{ height: `${Math.max(heightPercent, 3)}%` }}
+              title={`${point.captureBps.toFixed(2)} bps`}
+            />
+          );
+        })}
+      </div>
+    </Card>
+  );
 }

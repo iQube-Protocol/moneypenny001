@@ -122,51 +122,49 @@ export function LiveMarketFeed() {
 
   return (
     <div className="space-y-4">
-      {/* Header with Connection Status */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h2 className="text-lg font-bold text-foreground">Live Market Feed</h2>
-          <Badge variant={isConnected ? "default" : "secondary"} className="gap-1">
-            <Activity className={`h-3 w-3 ${isConnected ? 'animate-pulse' : ''}`} />
-            {isConnected ? 'Connected' : 'Connecting...'}
-          </Badge>
-          <Badge variant="outline">{mode}</Badge>
-        </div>
-        <Button 
-          size="sm" 
-          variant="ghost" 
-          onClick={restartStream}
-          className="gap-2"
-        >
-          <RefreshCw className="h-3 w-3" />
-          Restart
-        </Button>
-      </div>
-
-      {/* Chain Selection */}
+      {/* Header with Connection Status and Chain Selection */}
       <Card className="glass-card p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <h3 className="text-sm font-semibold text-foreground">Active Chains</h3>
-          <span className="text-xs text-muted-foreground">
-            ({selectedChains.length} of {AVAILABLE_CHAINS.length})
-          </span>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {AVAILABLE_CHAINS.map(chain => (
-            <button
-              key={chain}
-              onClick={() => toggleChain(chain)}
-              className={`
-                px-3 py-1.5 rounded-full text-xs font-medium transition-all
-                ${selectedChains.includes(chain)
-                  ? 'bg-primary/20 text-primary border border-primary/30'
-                  : 'bg-muted/30 text-muted-foreground border border-border/30 opacity-50'
-                }
-              `}
-            >
-              {CHAIN_ICONS[chain as keyof typeof CHAIN_ICONS]} {chain}
-            </button>
-          ))}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-bold text-foreground">Live Market Feed</h2>
+            <Badge variant={isConnected ? "default" : "secondary"} className="gap-1">
+              <Activity className={`h-3 w-3 ${isConnected ? 'animate-pulse' : ''}`} />
+              {isConnected ? 'Connected' : 'Connecting...'}
+            </Badge>
+            <Badge variant="outline">{mode}</Badge>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              ({selectedChains.length}/{AVAILABLE_CHAINS.length})
+            </span>
+            {AVAILABLE_CHAINS.map(chain => (
+              <button
+                key={chain}
+                onClick={() => toggleChain(chain)}
+                className={`
+                  px-2 py-1 rounded text-sm font-medium transition-all
+                  ${selectedChains.includes(chain)
+                    ? 'bg-primary/20 text-primary border border-primary/30'
+                    : 'bg-muted/30 text-muted-foreground border border-border/30 opacity-50'
+                  }
+                `}
+                title={chain}
+              >
+                {CHAIN_ICONS[chain as keyof typeof CHAIN_ICONS]}
+              </button>
+            ))}
+          </div>
+
+          <Button 
+            size="sm" 
+            variant="ghost" 
+            onClick={restartStream}
+            className="gap-2"
+          >
+            <RefreshCw className="h-3 w-3" />
+            Restart
+          </Button>
         </div>
       </Card>
 
