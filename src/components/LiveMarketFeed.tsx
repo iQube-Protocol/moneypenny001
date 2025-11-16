@@ -47,6 +47,7 @@ export function LiveMarketFeed() {
       const eventSource = moneyPenny.quotes.startSimStream(
         selectedChains,
         (event: StreamEvent) => {
+          console.log('First message received, marking connected');
           setIsConnected(true);
           handleMessage(event);
         },
@@ -56,6 +57,7 @@ export function LiveMarketFeed() {
         }
       );
 
+      console.log('SSE URL:', eventSource.url);
       eventSourceRef.current = eventSource;
     } catch (error) {
       console.error('Failed to start stream:', error);
@@ -169,7 +171,7 @@ export function LiveMarketFeed() {
       </Card>
 
       {/* Monitoring Dashboard */}
-      <div className="grid lg:grid-cols-2 gap-4">
+      <div className="grid lg:grid-cols-3 gap-4">
         {/* Edge Gauge */}
         <Card className="glass-card p-4">
           <div className="text-sm font-semibold mb-3 text-foreground">Edge Gauge</div>
@@ -189,6 +191,40 @@ export function LiveMarketFeed() {
             </div>
             <div className="text-xs text-muted-foreground mt-1">
               Total earned today
+            </div>
+          </div>
+        </Card>
+
+        {/* Capture Performance */}
+        <Card className="glass-card p-4">
+          <div className="text-sm font-semibold mb-3 text-foreground">Capture Performance</div>
+          <div className="relative h-20 flex items-end gap-0.5">
+            {captures.slice(-30).map((capture, idx) => {
+              const maxCapture = Math.max(...captures, 1);
+              const heightPercent = (Math.abs(capture) / maxCapture) * 100;
+              
+              return (
+                <div
+                  key={idx}
+                  className={`flex-1 rounded-t transition-all ${
+                    capture > 0 
+                      ? 'bg-success hover:bg-success/80' 
+                      : 'bg-destructive hover:bg-destructive/80'
+                  }`}
+                  style={{ height: `${Math.max(heightPercent, 5)}%` }}
+                  title={`${capture.toFixed(2)} bps`}
+                />
+              );
+            })}
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs mt-3">
+            <div>
+              <span className="text-muted-foreground">Last:</span>
+              <span className="font-bold text-foreground ml-1">{lastCapture.toFixed(2)} bps</span>
+            </div>
+            <div>
+              <span className="text-muted-foreground">Avg:</span>
+              <span className="font-bold text-foreground ml-1">{avgCapture.toFixed(2)} bps</span>
             </div>
           </div>
         </Card>

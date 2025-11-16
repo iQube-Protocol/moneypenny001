@@ -1,5 +1,8 @@
 project_id = "csmytlhrdcnjzqrmimnw"
 
+[functions.quotes]
+verify_jwt = false
+
 [functions.moneypenny-chat]
 verify_jwt = false
 
