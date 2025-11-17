@@ -442,29 +442,29 @@ export const NotificationCenter = () => {
                     filterByType(type).map(notification => (
                       <Card 
                         key={notification.id} 
-                        className={`p-4 ${!notification.read ? 'bg-accent' : ''}`}
+                        className={`p-4 backdrop-blur-sm bg-background/40 border-border/50 ${!notification.read ? 'border-primary/30 bg-primary/5' : ''}`}
                       >
                         <div className="flex items-start gap-3">
                           {getIcon(notification.type, notification.severity)}
                           
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
-                              <h4 className="font-semibold text-sm">{notification.title}</h4>
+                              <h4 className="font-semibold text-sm text-foreground">{notification.title}</h4>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-6 w-6 -mt-1"
+                                className="h-6 w-6 -mt-1 text-foreground/70 hover:text-foreground"
                                 onClick={() => deleteNotification(notification.id)}
                               >
                                 <X className="w-3 h-3" />
                               </Button>
                             </div>
                             
-                            <p className="text-sm text-muted-foreground mt-1">
+                            <p className="text-sm text-foreground/80 mt-1">
                               {notification.message}
                             </p>
                             
-                            <p className="text-xs text-muted-foreground mt-2">
+                            <p className="text-xs text-foreground/60 mt-2">
                               {notification.timestamp.toLocaleTimeString()}
                             </p>
                             
@@ -472,7 +472,7 @@ export const NotificationCenter = () => {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="mt-2 h-7 text-xs"
+                                className="mt-2 h-7 text-xs text-primary hover:text-primary/80"
                                 onClick={() => markAsRead(notification.id)}
                               >
                                 Mark as read
