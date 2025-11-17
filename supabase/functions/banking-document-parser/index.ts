@@ -212,7 +212,7 @@ serve(async (req) => {
         top_categories: [],
         computed_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      })
+      }, { onConflict: 'user_id' })
       .select()
       .single();
 
@@ -234,7 +234,7 @@ serve(async (req) => {
         daily_loss_limit_bps: recommendations.daily_loss_limit_bps,
         reasoning: recommendations.reasoning,
         updated_at: new Date().toISOString(),
-      })
+      }, { onConflict: 'user_id' })
       .select()
       .single();
 
