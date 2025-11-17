@@ -59,8 +59,8 @@ export const ExecutionFeed = ({ maxItems = 20, showSound = true }: ExecutionFeed
     loadInitialExecutions();
 
     // Subscribe to real-time database changes on trading_executions table
-    const channel = supabase
-      .channel('execution-feed')
+    const dbChannel = supabase
+      .channel('execution-feed-db')
       .on(
         'postgres_changes',
         {
@@ -93,8 +93,34 @@ export const ExecutionFeed = ({ maxItems = 20, showSound = true }: ExecutionFeed
       )
       .subscribe();
 
+    // Also subscribe to broadcast notifications from execution engine
+    const broadcastChannel = supabase
+      .channel('notifications')
+      .on('broadcast', { event: 'notification' }, (payload) => {
+        const notification = payload.payload as any;
+        if (notification.type === 'execution_fill') {
+          console.log('ExecutionFeed: Broadcast execution:', notification);
+          const d = notification.data;
+          const newExecution: ExecutionFeedItem = {
+            id: d.execution_id,
+            executionId: d.execution_id,
+            chain: d.chain,
+            side: d.side as 'BUY' | 'SELL',
+            asset: d.asset || 'QC',
+            qtyFilled: d.qty_filled,
+            avgPrice: d.avg_price,
+            captureBps: d.capture_bps,
+            timestamp: new Date(notification.timestamp || Date.now()),
+          };
+          setExecutions(prev => [newExecution, ...prev].slice(0, maxItems));
+          if (showSound) playExecutionSound(d.side === 'BUY');
+        }
+      })
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(dbChannel);
+      supabase.removeChannel(broadcastChannel);
     };
   }, [maxItems, showSound]);
 
