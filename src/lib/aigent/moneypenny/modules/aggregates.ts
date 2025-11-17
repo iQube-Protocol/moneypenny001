@@ -19,13 +19,11 @@ export interface FinancialAggregate {
 }
 
 export interface TradingRecommendations {
-  inventory_band: {
-    min_qc: number;
-    max_qc: number;
-  };
-  min_edge_bps_baseline: number;
+  inventory_min: number;
+  inventory_max: number;
+  min_edge_bps: number;
+  max_notional_usd: number;
   daily_loss_limit_bps: number;
-  max_notional_usd_day: number;
   reasoning?: string;
   confidence: number;
 }
@@ -100,23 +98,22 @@ export class AggregatesModule {
     if (!data) {
       // Return default conservative values if no recommendations exist yet
       return {
-        inventory_band: { min_qc: 50, max_qc: 500 },
-        min_edge_bps_baseline: 1.0,
+        inventory_min: 50,
+        inventory_max: 500,
+        min_edge_bps: 1.0,
         daily_loss_limit_bps: 10,
-        max_notional_usd_day: 100,
+        max_notional_usd: 100,
         reasoning: 'Default conservative settings',
         confidence: 0.5,
       };
     }
 
     return {
-      inventory_band: {
-        min_qc: Number(data.inventory_min),
-        max_qc: Number(data.inventory_max),
-      },
-      min_edge_bps_baseline: Number(data.min_edge_bps),
+      inventory_min: Number(data.inventory_min),
+      inventory_max: Number(data.inventory_max),
+      min_edge_bps: Number(data.min_edge_bps),
+      max_notional_usd: Number(data.max_notional_usd),
       daily_loss_limit_bps: Number(data.daily_loss_limit_bps),
-      max_notional_usd_day: Number(data.max_notional_usd),
       reasoning: data.reasoning || undefined,
       confidence: 0.8, // High confidence since computed from actual data
     };
@@ -155,11 +152,11 @@ export class AggregatesModule {
       .from('trading_recommendations')
       .upsert({
         user_id: user.id,
-        inventory_min: updated.inventory_band.min_qc,
-        inventory_max: updated.inventory_band.max_qc,
-        min_edge_bps: updated.min_edge_bps_baseline,
+        inventory_min: updated.inventory_min,
+        inventory_max: updated.inventory_max,
+        min_edge_bps: updated.min_edge_bps,
+        max_notional_usd: updated.max_notional_usd,
         daily_loss_limit_bps: updated.daily_loss_limit_bps,
-        max_notional_usd: updated.max_notional_usd_day,
         reasoning: updated.reasoning,
         updated_at: new Date().toISOString(),
       });
