@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_memories: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       bank_statements: {
         Row: {
           closing_balance: number | null

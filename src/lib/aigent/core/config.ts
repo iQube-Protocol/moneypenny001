@@ -13,7 +13,7 @@ export function createConfigFromEnv(): AgentiQConfig {
     blakQubeUrl: import.meta.env.VITE_BLAKQUBE_URL || 'https://blak.aigent.dev',
     metaQubeUrl: import.meta.env.VITE_METAQUBE_URL || 'https://meta.aigent.dev',
     aggregateUrl: import.meta.env.VITE_AGGREGATE_URL || 'https://aggregate.aigent.dev',
-    memoriesUrl: import.meta.env.VITE_MEMORIES_URL || 'https://memories.aigent.dev',
+    memoriesUrl: import.meta.env.VITE_MEMORIES_URL || `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/memories`,
     quotesUrl: import.meta.env.VITE_QUOTES_URL || `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/quotes`,
     executionUrl: import.meta.env.VITE_EXECUTION_URL || `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/execution-engine`,
     oracleUrl: import.meta.env.VITE_ORACLE_URL || 'https://oracle.aigent.dev',
