@@ -7,10 +7,18 @@ const corsHeaders = {
 };
 
 interface Transaction {
-  date: string; // YYYY-MM-DD
-  amount: number; // signed amount, negative for debits
-  category: string;
-  description?: string;
+  date: string;
+  description: string;
+  amount: number;
+  type?: string;
+  category?: string;
+}
+
+interface StructuredBankData {
+  statement_period: { start: string; end: string };
+  opening_balance: number;
+  closing_balance: number;
+  transactions: Transaction[];
 }
 
 function clamp(value: number, min: number, max: number): number {
