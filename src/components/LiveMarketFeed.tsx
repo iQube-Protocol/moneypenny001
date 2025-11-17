@@ -287,137 +287,147 @@ export function LiveMarketFeed() {
       {/* 24-Hour Trade History */}
       <CaptureSparkline />
 
-      {/* Live Quotes Feed */}
-      <Card className="glass-card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-foreground">Live Quotes</h3>
-          <Badge variant="outline" className="text-xs">{quotes.length} recent</Badge>
-        </div>
-        <div className="space-y-1 max-h-64 overflow-y-auto custom-scrollbar">
-          {quotes.length === 0 ? (
-            <div className="text-sm text-muted-foreground text-center py-8">
-              Waiting for quotes...
-            </div>
-          ) : (
-            quotes.map((quote, idx) => (
-              <div 
-                key={`${quote.chain}-${quote.ts}-${idx}`}
-                className="flex items-center justify-between px-3 py-2 rounded bg-muted/30 hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">
-                    {CHAIN_ICONS[quote.chain as keyof typeof CHAIN_ICONS]}
-                  </span>
-                  <span className="text-xs font-medium text-foreground capitalize">
-                    {quote.chain}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-mono text-muted-foreground">
-                    {quote.qty_qc.toFixed(2)} Q¢
-                  </span>
-                  <span className={`text-xs font-bold ${
-                    quote.edge_bps > 0 ? 'text-success' : 'text-destructive'
-                  }`}>
-                    {quote.edge_bps.toFixed(2)} bps
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(quote.ts).toLocaleTimeString()}
-                  </span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </Card>
-
-      {/* Recent Fills */}
-      <Card className="glass-card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-foreground">Recent Fills</h3>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs bg-primary/10">
-              {realExecutions.length} LIVE
-            </Badge>
-            <Badge variant="outline" className="text-xs bg-muted/50">
-              {fills.length} SIM
-            </Badge>
+      {/* Live Quotes Feed and Recent Fills - Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Live Quotes Feed */}
+        <Card className="glass-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-foreground">Live Quotes</h3>
+            <Badge variant="outline" className="text-xs">{quotes.length} recent</Badge>
           </div>
-        </div>
-        <div className="space-y-1 max-h-96 overflow-y-auto custom-scrollbar">
-          {/* Real Executions First (LIVE) */}
-          {realExecutions.map((exec, idx) => (
-            <div 
-              key={`live-${exec.execution_id}-${idx}`}
-              className="flex items-center justify-between px-3 py-2 rounded bg-primary/10 hover:bg-primary/20 transition-colors border-l-2 border-primary"
-            >
-              <Badge className="bg-primary text-primary-foreground text-xs">
-                LIVE
-              </Badge>
-              <Badge 
-                variant={exec.side === 'BUY' ? 'default' : 'secondary'}
-                className={`${exec.side === 'BUY' ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}
-              >
-                {exec.side}
-              </Badge>
-              <span className="text-sm">
-                {CHAIN_ICONS[exec.chain as keyof typeof CHAIN_ICONS]}
-              </span>
-              <span className="text-xs font-mono text-foreground">
-                {exec.qty_filled.toFixed(2)} Q¢
-              </span>
-              <span className="text-xs font-mono text-muted-foreground">
-                ${exec.avg_price.toFixed(5)}
-              </span>
-              <span className={`text-xs font-bold ${exec.capture_bps > 0 ? 'text-success' : 'text-destructive'}`}>
-                {exec.capture_bps > 0 ? '+' : ''}{exec.capture_bps.toFixed(2)} bps
-              </span>
-              <span className="text-xs text-muted-foreground">
-                {new Date(exec.timestamp).toLocaleTimeString()}
-              </span>
-            </div>
-          ))}
+          <div className="space-y-1 max-h-64 overflow-y-auto custom-scrollbar">
+            {quotes.length === 0 ? (
+              <div className="text-sm text-muted-foreground text-center py-8">
+                Waiting for quotes...
+              </div>
+            ) : (
+              quotes.map((quote, idx) => (
+                <div 
+                  key={`${quote.chain}-${quote.ts}-${idx}`}
+                  className="flex items-center justify-between px-3 py-2 rounded bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">
+                      {CHAIN_ICONS[quote.chain as keyof typeof CHAIN_ICONS]}
+                    </span>
+                    <span className="text-xs font-medium text-foreground capitalize">
+                      {quote.chain}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-mono text-muted-foreground">
+                      {quote.qty_qc.toFixed(2)} Q¢
+                    </span>
+                    <span className={`text-xs font-bold ${
+                      quote.edge_bps > 0 ? 'text-success' : 'text-destructive'
+                    }`}>
+                      {quote.edge_bps.toFixed(2)} bps
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(quote.ts).toLocaleTimeString()}
+                    </span>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
 
-          {/* Simulation Fills (SIM) */}
-          {fills.length === 0 && realExecutions.length === 0 ? (
-            <div className="text-sm text-muted-foreground text-center py-8">
-              No fills yet...
+        {/* Recent Fills */}
+        <Card className="glass-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-foreground">Recent Fills</h3>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs bg-primary/10">
+                {realExecutions.length} LIVE
+              </Badge>
+              <Badge variant="outline" className="text-xs bg-muted/50">
+                {fills.length} SIM
+              </Badge>
             </div>
-          ) : (
-            fills.map((fill, idx) => (
+          </div>
+          <div className="space-y-1 max-h-64 overflow-y-auto custom-scrollbar">
+            {/* Real Executions First (LIVE) */}
+            {realExecutions.map((exec, idx) => (
               <div 
-                key={`sim-${fill.chain}-${fill.ts}-${idx}`}
-                className="flex items-center justify-between px-3 py-2 rounded bg-muted/30 hover:bg-muted/50 transition-colors"
+                key={`live-${exec.execution_id}-${idx}`}
+                className="flex items-center gap-2 px-3 py-2 rounded bg-primary/10 hover:bg-primary/20 transition-colors border-l-2 border-primary"
               >
-                <Badge variant="outline" className="text-xs">
-                  SIM
+                <Badge className="bg-primary text-primary-foreground text-xs">
+                  LIVE
                 </Badge>
                 <Badge 
-                  variant={fill.side === 'BUY' ? 'default' : 'secondary'}
-                  className={`${fill.side === 'BUY' ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}
+                  variant={exec.side === 'BUY' ? 'default' : 'secondary'}
+                  className={`${exec.side === 'BUY' ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}
                 >
-                  {fill.side}
+                  {exec.side}
                 </Badge>
-                <span className="text-sm">
-                  {CHAIN_ICONS[fill.chain as keyof typeof CHAIN_ICONS]}
-                </span>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm">
+                    {CHAIN_ICONS[exec.chain as keyof typeof CHAIN_ICONS]}
+                  </span>
+                  <span className="text-xs font-medium text-foreground">
+                    {CHAIN_LABELS[exec.chain as keyof typeof CHAIN_LABELS]}
+                  </span>
+                </div>
                 <span className="text-xs font-mono text-foreground">
-                  {fill.qty_qct.toFixed(2)} Q¢
+                  {exec.qty_filled.toFixed(2)} Q¢
                 </span>
                 <span className="text-xs font-mono text-muted-foreground">
-                  ${fill.price_usdc.toFixed(5)}
+                  ${exec.avg_price.toFixed(5)}
                 </span>
-                <span className="text-xs font-bold text-success">
-                  +{fill.capture_bps.toFixed(2)} bps
+                <span className={`text-xs font-bold ${exec.capture_bps > 0 ? 'text-success' : 'text-destructive'}`}>
+                  {exec.capture_bps > 0 ? '+' : ''}{exec.capture_bps.toFixed(2)} bps
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(fill.ts).toLocaleTimeString()}
+                <span className="text-xs text-muted-foreground ml-auto">
+                  {new Date(exec.timestamp).toLocaleTimeString()}
                 </span>
               </div>
-            ))
-          )}
-        </div>
-      </Card>
+            ))}
+
+            {/* Simulation Fills */}
+            {fills.length === 0 && realExecutions.length === 0 ? (
+              <div className="text-sm text-muted-foreground text-center py-8">
+                No fills yet...
+              </div>
+            ) : (
+              fills.map((fill, idx) => (
+                <div 
+                  key={`sim-${fill.chain}-${fill.ts}-${idx}`}
+                  className="flex items-center gap-2 px-3 py-2 rounded bg-muted/30 hover:bg-muted/50 transition-colors"
+                >
+                  <Badge 
+                    variant={fill.side === 'BUY' ? 'default' : 'secondary'}
+                    className={`${fill.side === 'BUY' ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}
+                  >
+                    {fill.side}
+                  </Badge>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm">
+                      {CHAIN_ICONS[fill.chain as keyof typeof CHAIN_ICONS]}
+                    </span>
+                    <span className="text-xs font-medium text-foreground">
+                      {CHAIN_LABELS[fill.chain as keyof typeof CHAIN_LABELS]}
+                    </span>
+                  </div>
+                  <span className="text-xs font-mono text-foreground">
+                    {fill.qty_qct.toFixed(2)} Q¢
+                  </span>
+                  <span className="text-xs font-mono text-muted-foreground">
+                    ${fill.price_usdc.toFixed(5)}
+                  </span>
+                  <span className="text-xs font-bold text-success">
+                    +{fill.capture_bps.toFixed(2)} bps
+                  </span>
+                  <span className="text-xs text-muted-foreground ml-auto">
+                    {new Date(fill.ts).toLocaleTimeString()}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
