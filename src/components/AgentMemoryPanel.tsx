@@ -52,15 +52,15 @@ export const AgentMemoryPanel = () => {
   };
 
   return (
-    <Card className="h-[600px] flex flex-col">
+    <Card className="h-[600px] flex flex-col p-4">
       <Tabs defaultValue="insights" className="flex-1 flex flex-col">
-        <TabsList className="grid w-full grid-cols-3 m-4">
-          <TabsTrigger value="insights">Insights</TabsTrigger>
-          <TabsTrigger value="decisions">Decisions</TabsTrigger>
-          <TabsTrigger value="memory">Memory</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 mb-4 shrink-0">
+          <TabsTrigger value="insights" className="text-xs sm:text-sm px-2">Insights</TabsTrigger>
+          <TabsTrigger value="decisions" className="text-xs sm:text-sm px-2">Decisions</TabsTrigger>
+          <TabsTrigger value="memory" className="text-xs sm:text-sm px-2">Memory</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="insights" className="flex-1 px-4 pb-4">
+        <TabsContent value="insights" className="flex-1 mt-0">
           <ScrollArea className="h-[480px]">
             <div className="space-y-3">
               {insights.length === 0 ? (
@@ -91,7 +91,7 @@ export const AgentMemoryPanel = () => {
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="decisions" className="flex-1 px-4 pb-4">
+        <TabsContent value="decisions" className="flex-1 mt-0">
           <ScrollArea className="h-[480px]">
             <div className="space-y-3">
               {decisions.length === 0 ? (
@@ -122,7 +122,7 @@ export const AgentMemoryPanel = () => {
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="memory" className="flex-1 px-4 pb-4">
+        <TabsContent value="memory" className="flex-1 mt-0">
           <ScrollArea className="h-[480px]">
             <div className="space-y-3">
               {memories.length === 0 ? (
