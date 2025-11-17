@@ -292,19 +292,46 @@ export function ProfileOverlay() {
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      // Delete all banking documents from storage
+      const { data: files } = await supabase.storage
+        .from('bank-statements')
+        .list(user.id);
+
+      if (files && files.length > 0) {
+        const filePaths = files.map(file => `${user.id}/${file.name}`);
+        await supabase.storage
+          .from('bank-statements')
+          .remove(filePaths);
+      }
+
+      // Delete all records from database tables
+      await Promise.all([
+        supabase.from('bank_statements').delete().eq('user_id', user.id),
+        supabase.from('financial_aggregates').delete().eq('user_id', user.id),
+        supabase.from('trading_recommendations').delete().eq('user_id', user.id)
+      ]);
+
+      // Clear local state
+      setDocuments([]);
+
+      // Refetch to confirm everything is cleared
       await Promise.all([
         refetchAggregates(),
         refetchRecommendations(),
         refetchStatements()
       ]);
+
       toast({
-        title: "Data refreshed",
-        description: "Financial data updated successfully",
+        title: "Data cleared",
+        description: "All banking documents and financial data have been reset",
       });
     } catch (error) {
       toast({
-        title: "Refresh failed",
-        description: "Could not refresh data",
+        title: "Reset failed",
+        description: "Could not clear data",
         variant: "destructive",
       });
     } finally {
