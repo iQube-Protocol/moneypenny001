@@ -334,6 +334,9 @@ async function simulateExecution(supabaseClient: any, intent: any) {
       .update({ status: "filled" })
       .eq("intent_id", intent.intent_id);
 
+    // Auto-generate insights and decisions
+    await createExecutionMemories(supabaseClient, intent, execution);
+
     // Broadcast execution fill to all connected clients
     await supabaseClient.channel('notifications').send({
       type: 'broadcast',
@@ -363,5 +366,73 @@ async function simulateExecution(supabaseClient: any, intent: any) {
       .from("trading_intents")
       .update({ status: "failed" })
       .eq("intent_id", intent.intent_id);
+  }
+}
+
+// Auto-generate insights and decisions from execution data
+async function createExecutionMemories(
+  supabaseClient: any,
+  intent: any,
+  execution: any
+) {
+  try {
+    const memories = [];
+
+    // Generate insight based on capture performance
+    let insightContent = "";
+    if (execution.capture_bps > 3.0) {
+      insightContent = `Excellent capture of ${execution.capture_bps.toFixed(2)} bps on ${intent.chain} ${intent.side} - significantly above target edge of ${intent.min_edge_bps} bps. Market conditions highly favorable.`;
+    } else if (execution.capture_bps > 2.0) {
+      insightContent = `Good capture of ${execution.capture_bps.toFixed(2)} bps on ${intent.chain} ${intent.side} - solid execution meeting edge target of ${intent.min_edge_bps} bps.`;
+    } else if (execution.capture_bps > 1.0) {
+      insightContent = `Moderate capture of ${execution.capture_bps.toFixed(2)} bps on ${intent.chain} ${intent.side} - acceptable but below optimal performance.`;
+    } else {
+      insightContent = `Low capture of ${execution.capture_bps.toFixed(2)} bps on ${intent.chain} ${intent.side} - consider adjusting edge requirements or chain selection.`;
+    }
+
+    memories.push({
+      user_id: intent.user_id,
+      type: 'insight',
+      content: insightContent,
+      metadata: {
+        source: 'execution_engine',
+        execution_id: execution.execution_id,
+        intent_id: intent.intent_id,
+        capture_bps: execution.capture_bps,
+        chain: intent.chain,
+      },
+    });
+
+    // Generate decision log
+    const notionalUsd = (execution.qty_filled * execution.avg_price).toFixed(2);
+    const decisionContent = `Executed ${intent.side} order for ${execution.qty_filled} Q¢ (~$${notionalUsd}) on ${intent.chain} via ${execution.dex}. Decision: Accepted edge of ${intent.min_edge_bps} bps minimum, achieved ${execution.capture_bps.toFixed(2)} bps capture.`;
+    
+    memories.push({
+      user_id: intent.user_id,
+      type: 'decision',
+      content: decisionContent,
+      metadata: {
+        source: 'execution_engine',
+        execution_id: execution.execution_id,
+        intent_id: intent.intent_id,
+        side: intent.side,
+        qty_qc: execution.qty_filled,
+        dex: execution.dex,
+        tx_hash: execution.tx_hash,
+      },
+    });
+
+    // Insert all memories
+    const { error } = await supabaseClient
+      .from('agent_memories')
+      .insert(memories);
+
+    if (error) {
+      console.error('Failed to create execution memories:', error);
+    } else {
+      console.log(`Created ${memories.length} memories for execution ${execution.execution_id}`);
+    }
+  } catch (error) {
+    console.error('Error creating execution memories:', error);
   }
 }
