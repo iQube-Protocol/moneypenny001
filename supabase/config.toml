@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.banking-document-parser]
 verify_jwt = true
+
+[functions.memories]
+verify_jwt = true

@@ -58,33 +58,39 @@ export const ExecutionFeed = ({ maxItems = 20, showSound = true }: ExecutionFeed
 
     loadInitialExecutions();
 
-    // Subscribe to real-time execution fill notifications
+    // Subscribe to real-time database changes on trading_executions table
     const channel = supabase
       .channel('execution-feed')
-      .on('broadcast', { event: 'notification' }, (payload) => {
-        const notification = payload.payload as any;
-        if (notification.type === 'execution_fill') {
-          console.log('ExecutionFeed: New execution:', notification);
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'trading_executions',
+        },
+        (payload) => {
+          console.log('ExecutionFeed: New execution from database:', payload);
           
+          const exec = payload.new as any;
           const newExecution: ExecutionFeedItem = {
-            id: `${notification.data.execution_id}-${Date.now()}`,
-            executionId: notification.data.execution_id,
-            chain: notification.data.chain,
-            side: notification.data.side,
-            asset: notification.data.asset,
-            qtyFilled: notification.data.qty_filled,
-            avgPrice: notification.data.avg_price,
-            captureBps: notification.data.capture_bps,
-            timestamp: new Date(notification.timestamp),
+            id: exec.execution_id,
+            executionId: exec.execution_id,
+            chain: exec.chain,
+            side: exec.side as 'BUY' | 'SELL',
+            asset: 'QC',
+            qtyFilled: exec.qty_filled,
+            avgPrice: exec.avg_price,
+            captureBps: exec.capture_bps,
+            timestamp: new Date(exec.timestamp),
           };
           
           setExecutions(prev => [newExecution, ...prev].slice(0, maxItems));
           
           if (showSound) {
-            playExecutionSound(notification.data.side === 'BUY');
+            playExecutionSound(exec.side === 'BUY');
           }
         }
-      })
+      )
       .subscribe();
 
     return () => {
