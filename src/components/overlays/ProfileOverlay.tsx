@@ -58,10 +58,11 @@ export function ProfileOverlay() {
   };
 
   const suggestedPolicy = recommendationsData || {
-    inventory_band: { min_qc: 250, max_qc: 2500 },
-    min_edge_bps_baseline: 1.0,
+    inventory_min: 250,
+    inventory_max: 2500,
+    min_edge_bps: 1.0,
     daily_loss_limit_bps: 4.0,
-    max_notional_usd_day: 250.0,
+    max_notional_usd: 250.0,
     confidence: 0.5,
   };
 
@@ -280,11 +281,11 @@ export function ProfileOverlay() {
         <div className="grid grid-cols-2 gap-3 text-xs">
           <div>
             <p className="text-muted-foreground">Inventory Band (Q¢)</p>
-            <p className="font-mono">{suggestedPolicy.inventory_band?.min_qc || 250} - {suggestedPolicy.inventory_band?.max_qc || 2500}</p>
+            <p className="font-mono">{suggestedPolicy.inventory_min || 250} - {suggestedPolicy.inventory_max || 2500}</p>
           </div>
           <div>
             <p className="text-muted-foreground">Min Edge (bps)</p>
-            <p className="font-mono">{suggestedPolicy.min_edge_bps_baseline || 1.0}</p>
+            <p className="font-mono">{suggestedPolicy.min_edge_bps || 1.0}</p>
           </div>
           <div>
             <p className="text-muted-foreground">Daily Loss Limit</p>
@@ -292,7 +293,7 @@ export function ProfileOverlay() {
           </div>
           <div>
             <p className="text-muted-foreground">Max Notional</p>
-            <p className="font-mono">${suggestedPolicy.max_notional_usd_day || 250.0}</p>
+            <p className="font-mono">${suggestedPolicy.max_notional_usd || 250.0}</p>
           </div>
         </div>
         <Button size="sm" className="w-full mt-3" onClick={applyToConsole}>

@@ -64,11 +64,11 @@ export function AdvancedIntentForm({ availableChains, suggestedStrategy }: Advan
         const policy = JSON.parse(savedPolicy);
         
         // Pre-fill form with banking recommendations
-        if (policy.min_edge_bps_baseline) {
-          setMinEdgeBps(policy.min_edge_bps_baseline.toString());
+        if (policy.min_edge_bps) {
+          setMinEdgeBps(policy.min_edge_bps.toString());
         }
-        if (policy.max_notional_usd_day) {
-          setAmount(policy.max_notional_usd_day.toString());
+        if (policy.max_notional_usd) {
+          setAmount(policy.max_notional_usd.toString());
         }
         
         toast({
