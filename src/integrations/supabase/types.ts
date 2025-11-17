@@ -110,6 +110,94 @@ export type Database = {
         }
         Relationships: []
       }
+      policy_applications: {
+        Row: {
+          applied_at: string | null
+          applied_policy: Json | null
+          id: string
+          notes: string | null
+          previous_policy: Json | null
+          recommendation_id: string | null
+          user_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          applied_policy?: Json | null
+          id?: string
+          notes?: string | null
+          previous_policy?: Json | null
+          recommendation_id?: string | null
+          user_id: string
+        }
+        Update: {
+          applied_at?: string | null
+          applied_policy?: Json | null
+          id?: string
+          notes?: string | null
+          previous_policy?: Json | null
+          recommendation_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_applications_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: false
+            referencedRelation: "trading_recommendations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recommendation_history: {
+        Row: {
+          confidence_score: number | null
+          created_at: string | null
+          daily_loss_limit_bps: number
+          id: string
+          inventory_max: number
+          inventory_min: number
+          max_notional_usd: number
+          min_edge_bps: number
+          reasoning: string | null
+          recommendation_id: string | null
+          user_id: string
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string | null
+          daily_loss_limit_bps: number
+          id?: string
+          inventory_max: number
+          inventory_min: number
+          max_notional_usd: number
+          min_edge_bps: number
+          reasoning?: string | null
+          recommendation_id?: string | null
+          user_id: string
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string | null
+          daily_loss_limit_bps?: number
+          id?: string
+          inventory_max?: number
+          inventory_min?: number
+          max_notional_usd?: number
+          min_edge_bps?: number
+          reasoning?: string | null
+          recommendation_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_history_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: false
+            referencedRelation: "trading_recommendations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trading_executions: {
         Row: {
           avg_price: number
