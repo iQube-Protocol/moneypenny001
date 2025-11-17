@@ -3,34 +3,49 @@ import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useMoneyPenny } from '@/lib/aigent/moneypenny/client';
+import { supabase } from '@/integrations/supabase/client';
 import { Brain, TrendingUp, CheckCircle2 } from 'lucide-react';
 
 export const AgentMemoryPanel = () => {
   const [memories, setMemories] = useState<any[]>([]);
   const [insights, setInsights] = useState<any[]>([]);
   const [decisions, setDecisions] = useState<any[]>([]);
-  const moneyPenny = useMoneyPenny();
 
   useEffect(() => {
-    if (moneyPenny) {
-      loadMemories();
-    }
-  }, [moneyPenny]);
+    loadMemories();
+  }, []);
 
   const loadMemories = async () => {
-    if (!moneyPenny) return;
-    
     try {
-      const [recentMemories, insightsList, decisionsList] = await Promise.all([
-        moneyPenny.memories.getRecent(20),
-        moneyPenny.memories.getByType('insight', 10),
-        moneyPenny.memories.getByType('decision', 10),
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const [recentRes, insightsRes, decisionsRes] = await Promise.all([
+        supabase
+          .from('agent_memories')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(20),
+        supabase
+          .from('agent_memories')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('type', 'insight')
+          .order('created_at', { ascending: false })
+          .limit(10),
+        supabase
+          .from('agent_memories')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('type', 'decision')
+          .order('created_at', { ascending: false })
+          .limit(10),
       ]);
-      
-      setMemories(recentMemories);
-      setInsights(insightsList);
-      setDecisions(decisionsList);
+
+      setMemories(recentRes.data || []);
+      setInsights(insightsRes.data || []);
+      setDecisions(decisionsRes.data || []);
     } catch (error) {
       console.error('Failed to load memories:', error);
     }
