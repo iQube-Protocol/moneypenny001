@@ -9,6 +9,8 @@ import { ChainChip } from "./ChainChip";
 import { EdgeGauge } from "./EdgeGauge";
 import { CaptureSparkline } from "./CaptureSparkline";
 import { useMarketFeedStore } from "@/stores/marketFeedStore";
+import { supabase } from "@/integrations/supabase/client";
+import type { Execution } from "@/lib/aigent/moneypenny/modules/execution";
 
 const CHAIN_ICONS = {
   ethereum: '⟠',
@@ -37,12 +39,45 @@ export function LiveMarketFeed() {
   const { selectedChains, qcentEarned, setSelectedChains, addQcentEarned } = useMarketFeedStore();
   const [quotes, setQuotes] = useState<QuoteEvent[]>([]);
   const [fills, setFills] = useState<FillEvent[]>([]);
+  const [realExecutions, setRealExecutions] = useState<Execution[]>([]);
   const [captures, setCaptures] = useState<number[]>([]);
   const [currentEdge, setCurrentEdge] = useState<number>(0);
   const [isConnected, setIsConnected] = useState(false);
   const [mode, setMode] = useState<'SIM' | 'LIVE'>('SIM');
   
   const eventSourceRef = useRef<EventSource | null>(null);
+
+  // Fetch real executions on mount
+  useEffect(() => {
+    const loadExecutions = async () => {
+      if (!moneyPenny) return;
+      try {
+        const execs = await moneyPenny.execution.listExecutions(30);
+        setRealExecutions(execs);
+      } catch (error) {
+        console.error('Failed to load executions:', error);
+      }
+    };
+    loadExecutions();
+  }, [moneyPenny]);
+
+  // Subscribe to real-time execution updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('live-market-feed-executions')
+      .on('broadcast', { event: 'notification' }, (payload) => {
+        const notification = payload.payload as any;
+        if (notification.type === 'execution_fill') {
+          // Reload executions when new fill comes in
+          moneyPenny?.execution.listExecutions(30).then(setRealExecutions);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [moneyPenny]);
 
   const startStream = () => {
     // Close existing connection
@@ -294,19 +329,63 @@ export function LiveMarketFeed() {
       <Card className="glass-card p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-foreground">Recent Fills</h3>
-          <Badge variant="outline" className="text-xs">{fills.length} fills</Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs bg-primary/10">
+              {realExecutions.length} LIVE
+            </Badge>
+            <Badge variant="outline" className="text-xs bg-muted/50">
+              {fills.length} SIM
+            </Badge>
+          </div>
         </div>
         <div className="space-y-1 max-h-96 overflow-y-auto custom-scrollbar">
-          {fills.length === 0 ? (
+          {/* Real Executions First (LIVE) */}
+          {realExecutions.map((exec, idx) => (
+            <div 
+              key={`live-${exec.execution_id}-${idx}`}
+              className="flex items-center justify-between px-3 py-2 rounded bg-primary/10 hover:bg-primary/20 transition-colors border-l-2 border-primary"
+            >
+              <Badge className="bg-primary text-primary-foreground text-xs">
+                LIVE
+              </Badge>
+              <Badge 
+                variant={exec.side === 'BUY' ? 'default' : 'secondary'}
+                className={`${exec.side === 'BUY' ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}
+              >
+                {exec.side}
+              </Badge>
+              <span className="text-sm">
+                {CHAIN_ICONS[exec.chain as keyof typeof CHAIN_ICONS]}
+              </span>
+              <span className="text-xs font-mono text-foreground">
+                {exec.qty_filled.toFixed(2)} Q¢
+              </span>
+              <span className="text-xs font-mono text-muted-foreground">
+                ${exec.avg_price.toFixed(5)}
+              </span>
+              <span className={`text-xs font-bold ${exec.capture_bps > 0 ? 'text-success' : 'text-destructive'}`}>
+                {exec.capture_bps > 0 ? '+' : ''}{exec.capture_bps.toFixed(2)} bps
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {new Date(exec.timestamp).toLocaleTimeString()}
+              </span>
+            </div>
+          ))}
+
+          {/* Simulation Fills (SIM) */}
+          {fills.length === 0 && realExecutions.length === 0 ? (
             <div className="text-sm text-muted-foreground text-center py-8">
               No fills yet...
             </div>
           ) : (
             fills.map((fill, idx) => (
               <div 
-                key={`${fill.chain}-${fill.ts}-${idx}`}
+                key={`sim-${fill.chain}-${fill.ts}-${idx}`}
                 className="flex items-center justify-between px-3 py-2 rounded bg-muted/30 hover:bg-muted/50 transition-colors"
               >
+                <Badge variant="outline" className="text-xs">
+                  SIM
+                </Badge>
                 <Badge 
                   variant={fill.side === 'BUY' ? 'default' : 'secondary'}
                   className={`${fill.side === 'BUY' ? 'bg-success/20 text-success' : 'bg-destructive/20 text-destructive'}`}

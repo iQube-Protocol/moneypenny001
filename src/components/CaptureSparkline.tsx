@@ -1,6 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
+import { useMoneyPenny } from "@/lib/aigent/moneypenny/client";
+import { supabase } from "@/integrations/supabase/client";
+
 interface DataPoint {
   timestamp: string;
   captureBps: number;
@@ -9,57 +12,91 @@ interface CaptureSparklineProps {
   data?: DataPoint[];
   totalQc?: number;
 }
-const timeframes = ["1m", "15m", "30m", "1h", "24h", "48h", "1w", "1M"] as const;
+
 export function CaptureSparkline({
   data: initialData,
   totalQc: initialQc
 }: CaptureSparklineProps) {
-  const [selectedTimeframe, setSelectedTimeframe] = useState<typeof timeframes[number]>("24h");
-  const [simulatedData, setSimulatedData] = useState<DataPoint[]>(() => {
-    // Initialize with 72 data points (24 hours at 20-minute intervals for better performance)
-    const now = Date.now();
-    const pointsCount = 72;
-    const interval = 20 * 60 * 1000; // 20 minutes in milliseconds
+  const moneyPenny = useMoneyPenny();
+  const [realData, setRealData] = useState<DataPoint[]>([]);
+  const [totalQcEarned, setTotalQcEarned] = useState(0);
 
-    return Array.from({
-      length: pointsCount
-    }, (_, i) => {
-      const timestamp = now - (pointsCount - 1 - i) * interval;
-      // Simulate varying capture rates with some randomness
-      const baseCapture = 12; // Average 12 bps
-      const variance = Math.sin(i / 10) * 5; // Add wave pattern
-      const randomness = (Math.random() - 0.5) * 8;
-      return {
-        timestamp: new Date(timestamp).toISOString(),
-        captureBps: Math.max(3, Math.min(20, baseCapture + variance + randomness))
-      };
-    });
-  });
-  const [qcBalance, setQcBalance] = useState(1247.83);
-
-  // Simulate HFT trades - add new point every 10 minutes (sped up to 5 seconds for demo)
+  // Fetch real execution data and aggregate by 20-minute buckets
   useEffect(() => {
-    const interval = setInterval(() => {
-      const baseCapture = 12;
-      const variance = (Math.random() - 0.5) * 8;
-      const newCapture = Math.max(3, Math.min(20, baseCapture + variance));
-      const qcEarned = Math.random() * 0.5 + 0.1; // 0.1-0.6 Q¢ per period
+    const loadExecutionData = async () => {
+      if (!moneyPenny) return;
+      
+      try {
+        // Get last 24 hours of executions
+        const executions = await moneyPenny.execution.listExecutions(500);
+        
+        if (executions.length === 0) return;
 
-      setSimulatedData(prev => {
-        // Remove oldest, add newest (sliding 24-hour window)
-        const updated = [...prev.slice(1), {
-          timestamp: new Date().toISOString(),
-          captureBps: newCapture
-        }];
-        return updated;
-      });
-      setQcBalance(prev => prev + qcEarned);
-    }, 5000); // Update every 5 seconds to show activity (represents 10-min intervals)
+        // Filter last 24 hours
+        const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+        const recentExecutions = executions.filter(exec => 
+          new Date(exec.timestamp).getTime() > oneDayAgo
+        );
 
-    return () => clearInterval(interval);
-  }, []);
-  const data = initialData || simulatedData;
-  const totalQc = initialQc || qcBalance;
+        // Create 20-minute time buckets
+        const bucketSizeMs = 20 * 60 * 1000;
+        const bucketsMap = new Map<number, { captures: number[], total: number }>();
+
+        recentExecutions.forEach(exec => {
+          const timestamp = new Date(exec.timestamp).getTime();
+          const bucketKey = Math.floor(timestamp / bucketSizeMs) * bucketSizeMs;
+          
+          if (!bucketsMap.has(bucketKey)) {
+            bucketsMap.set(bucketKey, { captures: [], total: 0 });
+          }
+          
+          const bucket = bucketsMap.get(bucketKey)!;
+          bucket.captures.push(exec.capture_bps);
+          bucket.total += exec.qty_filled;
+        });
+
+        // Convert to data points
+        const dataPoints: DataPoint[] = [];
+        const sortedBuckets = Array.from(bucketsMap.entries()).sort((a, b) => a[0] - b[0]);
+        
+        sortedBuckets.forEach(([bucketTime, bucket]) => {
+          const avgCapture = bucket.captures.reduce((a, b) => a + b, 0) / bucket.captures.length;
+          dataPoints.push({
+            timestamp: new Date(bucketTime).toISOString(),
+            captureBps: avgCapture,
+          });
+        });
+
+        // Calculate total Q¢ earned
+        const totalQc = recentExecutions.reduce((sum, exec) => sum + exec.qty_filled, 0);
+
+        setRealData(dataPoints);
+        setTotalQcEarned(totalQc);
+      } catch (error) {
+        console.error('Failed to load execution data:', error);
+      }
+    };
+
+    loadExecutionData();
+
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('capture-sparkline-updates')
+      .on('broadcast', { event: 'notification' }, (payload) => {
+        const notification = payload.payload as any;
+        if (notification.type === 'execution_fill') {
+          loadExecutionData();
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [moneyPenny]);
+
+  const data = initialData || (realData.length > 0 ? realData : []);
+  const totalQc = initialQc !== undefined ? initialQc : totalQcEarned;
   const maxCapture = Math.max(...data.map(d => d.captureBps), 1);
   const minCapture = Math.min(...data.map(d => d.captureBps), 0);
   const range = maxCapture - minCapture;

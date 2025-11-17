@@ -1,9 +1,49 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, DollarSign, Activity } from "lucide-react";
+import { TrendingUp, DollarSign, Activity, Percent } from "lucide-react";
 import { PortfolioAnalytics } from "@/components/PortfolioAnalytics";
+import { useMoneyPenny } from "@/lib/aigent/moneypenny/client";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export function PortfolioOverlay() {
+  const moneyPenny = useMoneyPenny();
+  const [stats, setStats] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch execution stats
+  useEffect(() => {
+    const loadStats = async () => {
+      if (!moneyPenny) return;
+      
+      try {
+        const executionStats = await moneyPenny.execution.getStats('24h');
+        setStats(executionStats);
+      } catch (error) {
+        console.error('Failed to load stats:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStats();
+
+    // Subscribe to real-time updates
+    const channel = supabase
+      .channel('portfolio-stats-updates')
+      .on('broadcast', { event: 'notification' }, (payload) => {
+        const notification = payload.payload as any;
+        if (notification.type === 'execution_fill') {
+          loadStats();
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [moneyPenny]);
+
   return (
     <div className="space-y-4 h-full overflow-y-auto">
       <div>
@@ -13,15 +53,17 @@ export function PortfolioOverlay() {
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-4 gap-4">
         <Card className="glass-card p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-primary/10">
-              <DollarSign className="h-5 w-5 text-primary" />
+              <Activity className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Total Value</p>
-              <p className="text-lg font-bold">$12,450</p>
+              <p className="text-xs text-muted-foreground">Total Fills</p>
+              <p className="text-lg font-bold">
+                {loading ? '...' : stats?.total_fills || 0}
+              </p>
             </div>
           </div>
         </Card>
@@ -29,11 +71,13 @@ export function PortfolioOverlay() {
         <Card className="glass-card p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-success/10">
-              <TrendingUp className="h-5 w-5 text-success" />
+              <DollarSign className="h-5 w-5 text-success" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">24h Change</p>
-              <p className="text-lg font-bold text-success">+$247</p>
+              <p className="text-xs text-muted-foreground">Volume (24h)</p>
+              <p className="text-lg font-bold">
+                {loading ? '...' : `$${(stats?.total_volume_usd || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}`}
+              </p>
             </div>
           </div>
         </Card>
@@ -41,11 +85,27 @@ export function PortfolioOverlay() {
         <Card className="glass-card p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-accent/10">
-              <Activity className="h-5 w-5 text-accent" />
+              <TrendingUp className="h-5 w-5 text-accent" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Active Positions</p>
-              <p className="text-lg font-bold">8</p>
+              <p className="text-xs text-muted-foreground">Avg Capture</p>
+              <p className="text-lg font-bold">
+                {loading ? '...' : `${(stats?.avg_capture_bps || 0).toFixed(2)} bps`}
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="glass-card p-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Percent className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Win Rate</p>
+              <p className="text-lg font-bold">
+                {loading ? '...' : `${((stats?.win_rate || 0) * 100).toFixed(1)}%`}
+              </p>
             </div>
           </div>
         </Card>
