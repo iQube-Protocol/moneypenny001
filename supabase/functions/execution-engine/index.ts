@@ -49,11 +49,16 @@ serve(async (req) => {
     }
 
     const url = new URL(req.url);
-    const path = url.pathname.replace("/execution-engine", "");
+    
+    // Parse request body for path and data (supports both direct and wrapped formats)
+    const body = await req.json();
+    const path = body.path || url.pathname.replace("/execution-engine", "");
+    const method = body.method || req.method;
+    const intentData = body.data;
 
     // Route: POST /intent/submit
-    if (path === "/intent/submit" && req.method === "POST") {
-      const intent: Intent = await req.json();
+    if (path === "/intent/submit" && method === "POST") {
+      const intent: Intent = intentData || body;
 
       const { data, error } = await supabaseClient
         .from("trading_intents")
@@ -92,7 +97,7 @@ serve(async (req) => {
     }
 
     // Route: GET /intent/:id
-    if (path.startsWith("/intent/") && req.method === "GET" && !path.includes("/cancel")) {
+    if (path.startsWith("/intent/") && method === "GET" && !path.includes("/cancel")) {
       const intentId = path.split("/")[2];
 
       const { data, error } = await supabaseClient
@@ -116,7 +121,7 @@ serve(async (req) => {
     }
 
     // Route: GET /intent (list intents)
-    if (path === "/intent" && req.method === "GET") {
+    if (path === "/intent" && method === "GET") {
       const status = url.searchParams.get("status");
 
       let query = supabaseClient
@@ -146,7 +151,7 @@ serve(async (req) => {
     }
 
     // Route: POST /intent/:id/cancel
-    if (path.includes("/cancel") && req.method === "POST") {
+    if (path.includes("/cancel") && method === "POST") {
       const intentId = path.split("/")[2];
 
       const { data, error } = await supabaseClient
@@ -171,7 +176,7 @@ serve(async (req) => {
     }
 
     // Route: GET /execution/:id
-    if (path.startsWith("/execution/") && req.method === "GET") {
+    if (path.startsWith("/execution/") && method === "GET") {
       const executionId = path.split("/")[2];
 
       const { data, error } = await supabaseClient
@@ -195,7 +200,7 @@ serve(async (req) => {
     }
 
     // Route: GET /execution (list executions)
-    if (path === "/execution" && req.method === "GET") {
+    if (path === "/execution" && method === "GET") {
       const limit = parseInt(url.searchParams.get("limit") || "50");
 
       const { data, error } = await supabaseClient
@@ -219,7 +224,7 @@ serve(async (req) => {
     }
 
     // Route: GET /stats
-    if (path === "/stats" && req.method === "GET") {
+    if (path === "/stats" && method === "GET") {
       const period = url.searchParams.get("period") || "24h";
       const hours = period === "24h" ? 24 : period === "7d" ? 168 : 720;
 
