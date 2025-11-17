@@ -28,10 +28,10 @@ export default function Index() {
       {/* Hero Section */}
       <section className="flex-1 flex items-center justify-center px-6 py-20">
         <div className="max-w-4xl mx-auto text-center space-y-8">
-          <div className="inline-block">
+          <div className="flex justify-center">
             <div className="flex items-center gap-2 px-4 py-2 glass-card rounded-full mb-6">
               <Sparkles className="h-4 w-4 text-primary" />
-              <span className="text-sm">Powered by AgentiQ & Qripto</span>
+              <span className="text-sm">Powered by AgentiQ</span>
             </div>
           </div>
 
