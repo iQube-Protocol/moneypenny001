@@ -153,7 +153,7 @@ serve(async (req) => {
       allAggregates.push(agg);
       
       // Save bank statement metadata
-      await supabase.from("bank_statements").insert({
+      const { error: stmtError } = await supabase.from("bank_statements").insert({
         user_id,
         file_name: extracted.name,
         file_path: extracted.file_path,
@@ -162,6 +162,10 @@ serve(async (req) => {
         period_end: parsed.period_end,
         parsed_at: new Date().toISOString(),
       });
+
+      if (stmtError) {
+        console.error(`⚠️ Failed to save statement metadata for ${extracted.name}:`, stmtError);
+      }
     }
 
     console.log(`📊 Total: ${totalTransactions} estimated transactions`);
@@ -196,20 +200,30 @@ serve(async (req) => {
     console.log(`💡 Recommendations: ${JSON.stringify(recommendations, null, 2)}`);
 
     // Upsert aggregates
-    await supabase.from("financial_aggregates").upsert({
-      user_id,
-      avg_daily_surplus: merged.avg_daily_surplus,
-      surplus_volatility: merged.surplus_volatility,
-      closing_balance: merged.closing_balance,
-      cash_buffer_days: merged.cash_buffer_days,
-      confidence_score: merged.confidence_score,
-      top_categories: [],
-      computed_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+    const { data: aggData, error: aggError } = await supabase
+      .from("financial_aggregates")
+      .upsert({
+        user_id,
+        avg_daily_surplus: merged.avg_daily_surplus,
+        surplus_volatility: merged.surplus_volatility,
+        closing_balance: merged.closing_balance,
+        cash_buffer_days: merged.cash_buffer_days,
+        confidence_score: merged.confidence_score,
+        top_categories: [],
+        computed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (aggError) {
+      console.error("❌ Failed to upsert aggregates:", aggError);
+      throw new Error(`Aggregate upsert failed: ${aggError.message}`);
+    }
+    console.log("✅ Aggregates saved successfully");
 
     // Upsert recommendations
-    const { data: recData } = await supabase
+    const { data: recData, error: recError } = await supabase
       .from("trading_recommendations")
       .upsert({
         user_id,
@@ -224,8 +238,14 @@ serve(async (req) => {
       .select()
       .single();
 
+    if (recError) {
+      console.error("❌ Failed to upsert recommendations:", recError);
+      throw new Error(`Recommendation upsert failed: ${recError.message}`);
+    }
+    console.log("✅ Recommendations saved successfully");
+
     // Insert into history
-    await supabase.from("recommendation_history").insert({
+    const { error: histError } = await supabase.from("recommendation_history").insert({
       user_id,
       recommendation_id: recData?.id,
       inventory_min: recommendations.inventory_min,
@@ -236,6 +256,10 @@ serve(async (req) => {
       reasoning: recommendations.reasoning,
       confidence_score: merged.confidence_score,
     });
+
+    if (histError) {
+      console.error("⚠️ Failed to save recommendation history:", histError);
+    }
 
     return new Response(
       JSON.stringify({
