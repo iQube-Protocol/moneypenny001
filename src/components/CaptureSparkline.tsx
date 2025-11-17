@@ -24,11 +24,17 @@ export function CaptureSparkline({
   // Fetch real execution data and aggregate by 20-minute buckets
   useEffect(() => {
     const loadExecutionData = async () => {
-      if (!moneyPenny) return;
+      console.log('[CaptureSparkline] moneyPenny:', moneyPenny);
+      if (!moneyPenny) {
+        console.log('[CaptureSparkline] No moneyPenny client');
+        return;
+      }
       
       try {
+        console.log('[CaptureSparkline] Fetching executions...');
         // Get last 24 hours of executions
         const executions = await moneyPenny.execution.listExecutions(500);
+        console.log('[CaptureSparkline] Executions received:', executions);
         
         if (executions.length === 0) return;
 

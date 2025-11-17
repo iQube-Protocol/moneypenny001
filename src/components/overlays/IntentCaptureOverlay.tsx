@@ -18,9 +18,15 @@ export function IntentCaptureOverlay({ suggestedStrategy }: IntentCaptureOverlay
   // Fetch recent executions
   useEffect(() => {
     const loadFills = async () => {
-      if (!moneyPenny) return;
+      console.log('[IntentCapture] moneyPenny:', moneyPenny);
+      if (!moneyPenny) {
+        console.log('[IntentCapture] No moneyPenny client');
+        return;
+      }
       try {
+        console.log('[IntentCapture] Fetching executions...');
         const executions = await moneyPenny.execution.listExecutions(20);
+        console.log('[IntentCapture] Executions received:', executions);
         const fillsData = executions.map(exec => ({
           side: exec.side as "BUY" | "SELL",
           chain: exec.chain,
@@ -29,9 +35,10 @@ export function IntentCaptureOverlay({ suggestedStrategy }: IntentCaptureOverlay
           captureBps: exec.capture_bps,
           timestamp: exec.timestamp,
         }));
+        console.log('[IntentCapture] Fills data:', fillsData);
         setRecentFills(fillsData);
       } catch (error) {
-        console.error('Failed to load fills:', error);
+        console.error('[IntentCapture] Failed to load fills:', error);
       }
     };
 
