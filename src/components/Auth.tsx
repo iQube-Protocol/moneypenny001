@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Sparkles } from "lucide-react";
 
 export function Auth() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -57,6 +59,9 @@ export function Auth() {
         title: "Welcome back!",
         description: "You've successfully signed in.",
       });
+      
+      // Redirect to console
+      navigate("/console");
     } catch (error) {
       toast({
         title: "Sign in failed",

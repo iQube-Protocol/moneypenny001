@@ -43,7 +43,9 @@ export function ExecutionHistory() {
   const [sideFilter, setSideFilter] = useState<string>("all");
 
   useEffect(() => {
-    loadData();
+    if (moneyPenny) {
+      loadData();
+    }
 
     // Subscribe to real-time execution fill notifications
     const channel = supabase
@@ -64,6 +66,12 @@ export function ExecutionHistory() {
   }, []);
 
   const loadData = async () => {
+    if (!moneyPenny) {
+      console.log('[ExecutionHistory] No moneyPenny client');
+      setLoading(false);
+      return;
+    }
+    
     setLoading(true);
     try {
       const [intentsData, executionsData, statsData] = await Promise.all([

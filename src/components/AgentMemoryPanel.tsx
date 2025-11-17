@@ -13,10 +13,14 @@ export const AgentMemoryPanel = () => {
   const moneyPenny = useMoneyPenny();
 
   useEffect(() => {
-    loadMemories();
-  }, []);
+    if (moneyPenny) {
+      loadMemories();
+    }
+  }, [moneyPenny]);
 
   const loadMemories = async () => {
+    if (!moneyPenny) return;
+    
     try {
       const [recentMemories, insightsList, decisionsList] = await Promise.all([
         moneyPenny.memories.getRecent(20),

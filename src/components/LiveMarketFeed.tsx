@@ -7,6 +7,7 @@ import { useMoneyPenny } from "@/lib/aigent/moneypenny/client";
 import { StreamEvent, QuoteEvent, FillEvent, PnLEvent } from "@/lib/aigent/moneypenny/modules/quotes";
 import { ChainChip } from "./ChainChip";
 import { EdgeGauge } from "./EdgeGauge";
+import { InventoryGauge } from "./InventoryGauge";
 import { CaptureSparkline } from "./CaptureSparkline";
 import { useMarketFeedStore } from "@/stores/marketFeedStore";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +45,10 @@ export function LiveMarketFeed() {
   const [currentEdge, setCurrentEdge] = useState<number>(0);
   const [isConnected, setIsConnected] = useState(false);
   const [mode, setMode] = useState<'SIM' | 'LIVE'>('SIM');
+  const [inventoryMin] = useState<number>(0);
+  const [inventoryMax] = useState<number>(10000);
+  const [currentInventory, setCurrentInventory] = useState<number>(5000);
+  const [workingQc, setWorkingQc] = useState<number>(0);
   
   const eventSourceRef = useRef<EventSource | null>(null);
 
@@ -125,6 +130,15 @@ export function LiveMarketFeed() {
     } else if (msg.status === 'FILL') {
       const fill = msg as FillEvent;
       setFills(prev => [fill, ...prev].slice(0, 30));
+      
+      // Update working Q¢ based on fill
+      setWorkingQc(prev => {
+        const fillQc = fill.qty_qct || 0;
+        const newWorking = fill.side === 'BUY' ? prev + fillQc : prev - fillQc;
+        // Update current inventory as well
+        setCurrentInventory(newWorking);
+        return newWorking;
+      });
     } else if (msg.status === 'P&L') {
       const pnl = msg as PnLEvent;
       const captureBps = pnl.capture_bps || 0;
@@ -225,7 +239,7 @@ export function LiveMarketFeed() {
       </Card>
 
       {/* Monitoring Dashboard */}
-      <div className="grid lg:grid-cols-3 gap-4">
+      <div className="grid lg:grid-cols-2 gap-4">
         {/* Edge Gauge */}
         <Card className="glass-card p-4">
           <div className="text-sm font-semibold mb-3 text-foreground">Edge Gauge</div>
@@ -235,6 +249,21 @@ export function LiveMarketFeed() {
             liveEdgeBps={currentEdge} 
           />
         </Card>
+
+        {/* Inventory Gauge */}
+        <Card className="glass-card p-4">
+          <div className="text-sm font-semibold mb-3 text-foreground">Inventory Status</div>
+          <InventoryGauge
+            inventoryMin={inventoryMin}
+            inventoryMax={inventoryMax}
+            currentInventory={currentInventory}
+            workingQc={workingQc}
+          />
+        </Card>
+      </div>
+
+      {/* Performance Dashboard */}
+      <div className="grid lg:grid-cols-2 gap-4">
 
         {/* Q¢ Accumulated */}
         <Card className="glass-card p-4">
