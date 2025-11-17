@@ -242,69 +242,83 @@ export function ProfileOverlay() {
     : "N/A";
 
   return (
-    <div className="w-full h-full overflow-auto bg-background p-6">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full h-full overflow-auto bg-background p-4">
+      <div className="max-w-5xl mx-auto space-y-4">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Financial Profile</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold text-foreground mb-1">Financial Profile</h1>
+          <p className="text-sm text-muted-foreground">
             Upload bank statements to generate personalized trading recommendations
           </p>
         </div>
 
         {/* Financial Overview */}
-        <Card className="p-6 glass-card">
-          <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-semibold">Financial Overview</h2>
+        <Card className="p-4 glass-card">
+          <div className="flex items-center gap-2 mb-3">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            <h2 className="text-lg font-semibold">Financial Overview</h2>
           </div>
           
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-3">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Avg Daily Surplus</p>
-              <div className="flex items-baseline gap-2">
-                <DollarSign className="h-4 w-4 text-primary" />
-                <span className="text-2xl font-bold text-foreground">
+              <p className="text-xs text-muted-foreground">Avg Daily Surplus</p>
+              <div className="flex items-baseline gap-1">
+                <DollarSign className="h-3 w-3 text-primary" />
+                <span className="text-xl font-bold text-foreground">
                   {aggregates.avgSurplus.toFixed(2)}
                 </span>
               </div>
+              <div className="h-1 bg-secondary rounded-full overflow-hidden mt-1">
+                <div className="h-full bg-primary" style={{ width: `${Math.min((aggregates.avgSurplus / 500) * 100, 100)}%` }} />
+              </div>
             </div>
             
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Volatility</p>
-              <div className="flex items-baseline gap-2">
-                <Activity className="h-4 w-4 text-warning" />
-                <span className="text-2xl font-bold text-foreground">
+              <p className="text-xs text-muted-foreground">Volatility</p>
+              <div className="flex items-baseline gap-1">
+                <Activity className="h-3 w-3 text-warning" />
+                <span className="text-xl font-bold text-foreground">
                   {aggregates.surplusVol.toFixed(2)}
                 </span>
               </div>
+              <div className="h-1 bg-secondary rounded-full overflow-hidden mt-1">
+                <div className="h-full bg-warning" style={{ width: `${Math.min((aggregates.surplusVol / 200) * 100, 100)}%` }} />
+              </div>
             </div>
             
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Balance</p>
-              <div className="flex items-baseline gap-2">
-                <DollarSign className="h-4 w-4 text-primary" />
-                <span className="text-2xl font-bold text-foreground">
+              <p className="text-xs text-muted-foreground">Balance</p>
+              <div className="flex items-baseline gap-1">
+                <DollarSign className="h-3 w-3 text-primary" />
+                <span className="text-xl font-bold text-foreground">
                   {aggregates.lastBalance.toFixed(2)}
                 </span>
               </div>
+              <div className="h-1 bg-secondary rounded-full overflow-hidden mt-1">
+                <div className="h-full bg-accent" style={{ width: `${Math.min((aggregates.lastBalance / 20000) * 100, 100)}%` }} />
+              </div>
             </div>
-          </div>
 
-          <div className="mt-4 pt-4 border-t border-border">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">Cash Buffer</span>
-              <span className="text-lg font-semibold text-foreground">{cashBuffer} days</span>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">Cash Buffer</p>
+              <div className="flex items-baseline gap-1">
+                <Activity className="h-3 w-3 text-accent" />
+                <span className="text-xl font-bold text-foreground">{cashBuffer}</span>
+                <span className="text-xs text-muted-foreground">days</span>
+              </div>
+              <div className="h-1 bg-secondary rounded-full overflow-hidden mt-1">
+                <div className="h-full bg-accent" style={{ width: `${Math.min((parseFloat(cashBuffer === 'N/A' ? '0' : cashBuffer) / 100) * 100, 100)}%` }} />
+              </div>
             </div>
           </div>
         </Card>
 
         {/* Banking Documents */}
-        <Card className="p-6 glass-card">
-          <div className="flex items-center justify-between mb-4">
+        <Card className="p-4 glass-card">
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">Banking Documents</h2>
+              <FileText className="h-4 w-4 text-primary" />
+              <h2 className="text-base font-semibold">Banking Documents</h2>
             </div>
             
             <label htmlFor="file-upload">
@@ -340,23 +354,23 @@ export function ProfileOverlay() {
             />
           </div>
 
-          <ScrollArea className="h-[200px]">
+          <ScrollArea className="h-[120px]">
             {documents.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-4 text-sm text-muted-foreground">
                 No documents uploaded yet
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {documents.map((doc) => (
                   <div
                     key={doc.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                    className="flex items-center justify-between p-2 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
                   >
-                    <div className="flex items-center gap-3">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-3 w-3 text-muted-foreground" />
                       <div>
-                        <p className="text-sm font-medium text-foreground">{doc.name}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs font-medium text-foreground">{doc.name}</p>
+                        <p className="text-[10px] text-muted-foreground">
                           {doc.month} • {doc.size}
                         </p>
                       </div>
@@ -365,9 +379,9 @@ export function ProfileOverlay() {
                       variant="ghost"
                       size="sm"
                       onClick={() => deleteDocument(doc.id)}
-                      className="text-destructive hover:text-destructive"
+                      className="h-6 w-6 p-0 text-destructive hover:text-destructive"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
                 ))}
@@ -377,55 +391,69 @@ export function ProfileOverlay() {
         </Card>
 
         {/* Suggested Trading Policy */}
-        <Card className="p-6 glass-card">
-          <div className="space-y-4">
+        <Card className="p-4 glass-card">
+          <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-primary" />
-              <h2 className="text-xl font-semibold">Suggested Trading Policy</h2>
-              <Badge variant="outline" className="ml-auto">
+              <Activity className="h-4 w-4 text-primary" />
+              <h2 className="text-base font-semibold">Suggested Trading Policy</h2>
+              <Badge variant="outline" className="ml-auto text-xs">
                 AI-Generated
               </Badge>
             </div>
 
-            <div className="space-y-4">
-              <EdgeGauge
-                floorBps={0.5}
-                minEdgeBps={suggestedPolicy.min_edge_bps}
-                liveEdgeBps={suggestedPolicy.min_edge_bps}
-              />
+            <div className="space-y-3">
+              <div className="scale-90 origin-top-left">
+                <EdgeGauge
+                  floorBps={0.5}
+                  minEdgeBps={suggestedPolicy.min_edge_bps}
+                  liveEdgeBps={suggestedPolicy.min_edge_bps}
+                />
+              </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Inventory Range</p>
-                  <p className="text-lg font-semibold text-foreground">
+                  <p className="text-xs text-muted-foreground">Inventory Range</p>
+                  <p className="text-base font-semibold text-foreground">
                     ${suggestedPolicy.inventory_min} - ${suggestedPolicy.inventory_max}
                   </p>
+                  <div className="h-1 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-full bg-primary" style={{ width: `${Math.min((suggestedPolicy.inventory_max / 5000) * 100, 100)}%` }} />
+                  </div>
                 </div>
                 
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Min Edge</p>
-                  <p className="text-lg font-semibold text-foreground">
+                  <p className="text-xs text-muted-foreground">Min Edge</p>
+                  <p className="text-base font-semibold text-foreground">
                     {suggestedPolicy.min_edge_bps} bps
                   </p>
+                  <div className="h-1 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-full bg-accent" style={{ width: `${Math.min((suggestedPolicy.min_edge_bps / 5) * 100, 100)}%` }} />
+                  </div>
                 </div>
                 
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Max Notional/Day</p>
-                  <p className="text-lg font-semibold text-foreground">
+                  <p className="text-xs text-muted-foreground">Max Notional/Day</p>
+                  <p className="text-base font-semibold text-foreground">
                     ${suggestedPolicy.max_notional_usd}
                   </p>
+                  <div className="h-1 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-full bg-primary" style={{ width: `${Math.min((suggestedPolicy.max_notional_usd / 200) * 100, 100)}%` }} />
+                  </div>
                 </div>
                 
                 <div className="space-y-1">
-                  <p className="text-sm text-muted-foreground">Daily Loss Limit</p>
-                  <p className="text-lg font-semibold text-foreground">
+                  <p className="text-xs text-muted-foreground">Daily Loss Limit</p>
+                  <p className="text-base font-semibold text-foreground">
                     {suggestedPolicy.daily_loss_limit_bps} bps
                   </p>
+                  <div className="h-1 bg-secondary rounded-full overflow-hidden">
+                    <div className="h-full bg-warning" style={{ width: `${Math.min((suggestedPolicy.daily_loss_limit_bps / 50) * 100, 100)}%` }} />
+                  </div>
                 </div>
               </div>
 
               {recommendationsData?.reasoning && (
-                <div className="p-4 rounded-lg bg-secondary/50 text-sm text-muted-foreground">
+                <div className="p-2 rounded-lg bg-secondary/50 text-xs text-muted-foreground">
                   {recommendationsData.reasoning}
                 </div>
               )}
@@ -433,7 +461,6 @@ export function ProfileOverlay() {
               <Button 
                 onClick={applyToConsole}
                 className="w-full"
-                size="lg"
               >
                 Apply to Console
               </Button>
