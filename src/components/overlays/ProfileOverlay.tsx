@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Upload, FileText, Trash2, TrendingUp, DollarSign, Activity, Loader2 } from "lucide-react";
+import { Upload, FileText, Trash2, TrendingUp, DollarSign, Activity, Loader2, RefreshCw, BarChart3, Target, Shield, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMoneyPenny } from "@/lib/aigent/moneypenny/client";
@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { extractPDFText } from "@/lib/pdf/extractText";
 import { EdgeGauge } from "@/components/EdgeGauge";
 import { useOverlayManager } from "@/hooks/use-overlay-manager";
+import { Progress } from "@/components/ui/progress";
 
 interface BankingDocument {
   id: string;
@@ -24,12 +25,46 @@ interface BankingDocument {
 export function ProfileOverlay() {
   const [documents, setDocuments] = useState<BankingDocument[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
   const moneyPenny = useMoneyPenny();
   const overlayManager = useOverlayManager();
 
+  // Fetch bank statements from database
+  const { data: bankStatements, refetch: refetchStatements } = useQuery({
+    queryKey: ['bank-statements'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from('bank_statements')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Map to BankingDocument format
+      return (data || []).map(stmt => ({
+        id: stmt.id,
+        name: stmt.file_name,
+        month: stmt.period_start ? new Date(stmt.period_start).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown',
+        size: '0 KB',
+        uploaded: stmt.created_at ? new Date(stmt.created_at).toLocaleDateString() : 'Unknown'
+      }));
+    }
+  });
+
+  // Update local state when bank statements are fetched
+  useEffect(() => {
+    if (bankStatements) {
+      setDocuments(bankStatements);
+    }
+  }, [bankStatements]);
+
   // Fetch real aggregates and recommendations from backend
-  const { data: aggregatesData, refetch: refetchAggregates } = useQuery({
+  const { data: aggregatesData, refetch: refetchAggregates, isLoading: aggregatesLoading } = useQuery({
     queryKey: ['banking-aggregates'],
     queryFn: async () => {
       try {
@@ -42,7 +77,7 @@ export function ProfileOverlay() {
     refetchOnWindowFocus: false,
   });
 
-  const { data: recommendationsData, refetch: refetchRecommendations } = useQuery({
+  const { data: recommendationsData, refetch: refetchRecommendations, isLoading: recommendationsLoading } = useQuery({
     queryKey: ['banking-recommendations'],
     queryFn: async () => {
       try {
@@ -193,7 +228,11 @@ export function ProfileOverlay() {
       });
 
       // Refetch aggregates and recommendations
-      await Promise.all([refetchAggregates(), refetchRecommendations()]);
+      await Promise.all([
+        refetchAggregates(), 
+        refetchRecommendations(),
+        refetchStatements()
+      ]);
       
     } catch (error) {
       console.error('Upload error:', error);
@@ -207,12 +246,70 @@ export function ProfileOverlay() {
     }
   };
 
-  const deleteDocument = (id: string) => {
-    setDocuments(prev => prev.filter(doc => doc.id !== id));
-    toast({
-      title: "Document removed",
-      description: "The document has been removed from the list",
-    });
+  const deleteDocument = async (id: string) => {
+    try {
+      // Find the statement to get file path
+      const statement = bankStatements?.find(s => s.id === id);
+      
+      // Delete from database
+      const { error: dbError } = await supabase
+        .from('bank_statements')
+        .delete()
+        .eq('id', id);
+
+      if (dbError) throw dbError;
+
+      // Delete from storage if we have the file path
+      if (statement) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const filePath = `${user.id}/${statement.name}`;
+          await supabase.storage
+            .from('banking-documents')
+            .remove([filePath]);
+        }
+      }
+
+      // Update local state
+      setDocuments(prev => prev.filter(doc => doc.id !== id));
+
+      toast({
+        title: "Document deleted",
+        description: "Banking document removed successfully",
+      });
+
+      refetchStatements();
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast({
+        title: "Delete failed",
+        description: "Could not delete document",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        refetchAggregates(),
+        refetchRecommendations(),
+        refetchStatements()
+      ]);
+      toast({
+        title: "Data refreshed",
+        description: "Financial data updated successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh failed",
+        description: "Could not refresh data",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
   };
 
   const applyToConsole = async () => {
@@ -245,11 +342,23 @@ export function ProfileOverlay() {
     <div className="w-full h-full overflow-auto bg-background p-4">
       <div className="max-w-5xl mx-auto space-y-4">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground mb-1">Financial Profile</h1>
-          <p className="text-sm text-muted-foreground">
-            Upload bank statements to generate personalized trading recommendations
-          </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground mb-1">Financial Profile</h1>
+            <p className="text-sm text-muted-foreground">
+              Upload bank statements to generate personalized trading recommendations
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing || aggregatesLoading || recommendationsLoading}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-3 w-3 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </div>
 
         {/* Financial Overview */}

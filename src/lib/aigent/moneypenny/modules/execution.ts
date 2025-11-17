@@ -4,6 +4,7 @@
  */
 
 import { MoneyPennyClient } from '../client';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface Intent {
   intent_id: string;
@@ -42,66 +43,79 @@ export class ExecutionModule {
     minEdgeBps: number,
     maxSlippageBps: number = 5.0
   ): Promise<Intent> {
-    const config = this.client.getConfig();
-    
-    return this.client['fetch'](`${config.executionUrl}/intent/submit`, {
-      method: 'POST',
-      body: JSON.stringify({
-        chain,
-        side,
-        amount_qc: amountQc,
-        min_edge_bps: minEdgeBps,
-        max_slippage_bps: maxSlippageBps,
-      }),
+    const { data, error } = await supabase.functions.invoke('execution-engine', {
+      body: {
+        path: '/intent/submit',
+        method: 'POST',
+        data: {
+          chain,
+          side,
+          amount_qc: amountQc,
+          min_edge_bps: minEdgeBps,
+          max_slippage_bps: maxSlippageBps,
+        }
+      }
     });
+
+    if (error) throw error;
+    return data;
   }
 
   // Get intent status
   async getIntent(intentId: string): Promise<Intent> {
-    const config = this.client.getConfig();
-    
-    return this.client['fetch'](`${config.executionUrl}/intent/${intentId}`);
+    const { data, error } = await supabase.functions.invoke('execution-engine', {
+      body: { path: `/intent/${intentId}`, method: 'GET' }
+    });
+
+    if (error) throw error;
+    return data;
   }
 
   // List intents
   async listIntents(status?: Intent['status']): Promise<Intent[]> {
-    const config = this.client.getConfig();
     const scope = this.client.getScope();
-    
     if (!scope) return [];
 
     const statusParam = status ? `&status=${status}` : '';
-    return this.client['fetch'](
-      `${config.executionUrl}/intent?scope=${scope}${statusParam}`
-    );
+    const { data, error } = await supabase.functions.invoke('execution-engine', {
+      body: { path: `/intent?scope=${scope}${statusParam}`, method: 'GET' }
+    });
+
+    if (error) throw error;
+    return data || [];
   }
 
   // Cancel intent
   async cancelIntent(intentId: string): Promise<{ cancelled: boolean }> {
-    const config = this.client.getConfig();
-    
-    return this.client['fetch'](`${config.executionUrl}/intent/${intentId}/cancel`, {
-      method: 'POST',
+    const { data, error } = await supabase.functions.invoke('execution-engine', {
+      body: { path: `/intent/${intentId}/cancel`, method: 'POST' }
     });
+
+    if (error) throw error;
+    return data;
   }
 
   // Get execution details
   async getExecution(executionId: string): Promise<Execution> {
-    const config = this.client.getConfig();
-    
-    return this.client['fetch'](`${config.executionUrl}/execution/${executionId}`);
+    const { data, error } = await supabase.functions.invoke('execution-engine', {
+      body: { path: `/execution/${executionId}`, method: 'GET' }
+    });
+
+    if (error) throw error;
+    return data;
   }
 
   // List executions
   async listExecutions(limit: number = 50): Promise<Execution[]> {
-    const config = this.client.getConfig();
     const scope = this.client.getScope();
-    
     if (!scope) return [];
 
-    return this.client['fetch'](
-      `${config.executionUrl}/execution?scope=${scope}&limit=${limit}`
-    );
+    const { data, error } = await supabase.functions.invoke('execution-engine', {
+      body: { path: `/execution?scope=${scope}&limit=${limit}`, method: 'GET' }
+    });
+
+    if (error) throw error;
+    return data || [];
   }
 
   // Get execution statistics
@@ -112,7 +126,6 @@ export class ExecutionModule {
     chains_traded: string[];
     win_rate: number;
   }> {
-    const config = this.client.getConfig();
     const scope = this.client.getScope();
     
     if (!scope) {
@@ -125,8 +138,11 @@ export class ExecutionModule {
       };
     }
 
-    return this.client['fetch'](
-      `${config.executionUrl}/stats?scope=${scope}&period=${period}`
-    );
+    const { data, error } = await supabase.functions.invoke('execution-engine', {
+      body: { path: `/stats?scope=${scope}&period=${period}`, method: 'GET' }
+    });
+
+    if (error) throw error;
+    return data;
   }
 }
