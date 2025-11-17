@@ -134,7 +134,7 @@ export function CaptureSparkline({
         <h3 className="text-sm font-semibold text-foreground">24-Hour Trade History</h3>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-xs">{displayData.length} periods</Badge>
-          <Badge variant="outline" className="text-xs bg-background/20 backdrop-blur-sm border-border/30">{displayTotalQc.toFixed(2)} Q¢</Badge>
+          <Badge variant="outline" className="text-xs bg-background/20 backdrop-blur-sm border-border/30 text-green-500">{displayTotalQc.toFixed(2)} Q¢</Badge>
         </div>
       </div>
       <div className="relative h-32 flex items-end gap-px">
