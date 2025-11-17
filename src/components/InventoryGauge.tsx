@@ -39,15 +39,21 @@ export function InventoryGauge({
           style={{ left: `${minPercent}%`, right: `${100 - maxPercent}%` }}
         />
         
-        {/* Current inventory position */}
+        {/* Used inventory fill (turquoise) */}
         <div 
-          className="absolute top-0 bottom-0 w-1 bg-primary z-10"
+          className="absolute top-0 bottom-0 bg-accent/40 transition-all duration-300"
+          style={{ left: '0%', width: `${currentPercent}%` }}
+        />
+        
+        {/* Current inventory position needle */}
+        <div 
+          className="absolute top-0 bottom-0 w-1 bg-primary z-10 transition-all duration-300"
           style={{ left: `${currentPercent}%` }}
         />
         
         {/* Working Q¢ marker */}
         <div 
-          className="absolute top-0 bottom-0 w-1 bg-accent z-10"
+          className="absolute top-0 bottom-0 w-1 bg-accent z-10 transition-all duration-300"
           style={{ left: `${workingPercent}%` }}
         />
       </div>
