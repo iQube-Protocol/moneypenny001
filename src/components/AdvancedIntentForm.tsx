@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { ChainChip } from "./ChainChip";
 import { useMoneyPenny } from "@/lib/aigent/moneypenny/client";
 import { useToast } from "@/hooks/use-toast";
+import { useOverlayManager } from "@/hooks/use-overlay-manager";
 import { TrendingUp, TrendingDown, Loader2, Settings2, Zap } from "lucide-react";
 import { Intent } from "@/lib/aigent/moneypenny/modules/execution";
 import { z } from "zod";
@@ -37,6 +39,8 @@ interface AdvancedIntentFormProps {
 export function AdvancedIntentForm({ availableChains, suggestedStrategy }: AdvancedIntentFormProps) {
   const moneyPenny = useMoneyPenny();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { closeOverlay } = useOverlayManager();
 
   // Apply suggested strategy if provided
   const [selectedChain, setSelectedChain] = useState<string>(suggestedStrategy?.chain || availableChains[0] || "eth");
@@ -179,6 +183,12 @@ export function AdvancedIntentForm({ availableChains, suggestedStrategy }: Advan
         title: "Intent submitted",
         description: `${input.orderType} order submitted: ${intent.intent_id}`,
       });
+
+      // Close overlay and navigate to Feed page
+      closeOverlay();
+      setTimeout(() => {
+        navigate("/console");
+      }, 100);
 
       pollIntentStatus(intent.intent_id);
     } catch (error) {

@@ -58,6 +58,12 @@ export function PortfolioAnalytics() {
   }, [timePeriod]);
 
   const loadData = async () => {
+    if (!moneyPenny) {
+      console.log('[PortfolioAnalytics] No moneyPenny client');
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
       
