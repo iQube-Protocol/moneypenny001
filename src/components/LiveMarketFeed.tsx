@@ -50,12 +50,18 @@ export function LiveMarketFeed() {
   // Fetch real executions on mount
   useEffect(() => {
     const loadExecutions = async () => {
-      if (!moneyPenny) return;
+      console.log('[LiveMarketFeed] moneyPenny:', moneyPenny);
+      if (!moneyPenny) {
+        console.log('[LiveMarketFeed] No moneyPenny client');
+        return;
+      }
       try {
+        console.log('[LiveMarketFeed] Fetching executions...');
         const execs = await moneyPenny.execution.listExecutions(30);
+        console.log('[LiveMarketFeed] Executions received:', execs);
         setRealExecutions(execs);
       } catch (error) {
-        console.error('Failed to load executions:', error);
+        console.error('[LiveMarketFeed] Failed to load executions:', error);
       }
     };
     loadExecutions();

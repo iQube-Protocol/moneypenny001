@@ -14,13 +14,19 @@ export function PortfolioOverlay() {
   // Fetch execution stats
   useEffect(() => {
     const loadStats = async () => {
-      if (!moneyPenny) return;
+      console.log('[Portfolio] moneyPenny:', moneyPenny);
+      if (!moneyPenny) {
+        console.log('[Portfolio] No moneyPenny client');
+        return;
+      }
       
       try {
+        console.log('[Portfolio] Fetching stats...');
         const executionStats = await moneyPenny.execution.getStats('24h');
+        console.log('[Portfolio] Stats received:', executionStats);
         setStats(executionStats);
       } catch (error) {
-        console.error('Failed to load stats:', error);
+        console.error('[Portfolio] Failed to load stats:', error);
       } finally {
         setLoading(false);
       }
