@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useMoneyPenny } from "@/lib/aigent/moneypenny/client";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { extractPDFText } from "@/lib/pdf/extractText";
+import { EdgeGauge } from "@/components/EdgeGauge";
+import { useOverlayManager } from "@/hooks/use-overlay-manager";
 
 interface BankingDocument {
   id: string;
@@ -23,6 +26,7 @@ export function ProfileOverlay() {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
   const moneyPenny = useMoneyPenny();
+  const overlayManager = useOverlayManager();
 
   // Fetch real aggregates and recommendations from backend
   const { data: aggregatesData, refetch: refetchAggregates } = useQuery({
@@ -38,7 +42,7 @@ export function ProfileOverlay() {
     refetchOnWindowFocus: false,
   });
 
-  const { data: recommendationsData } = useQuery({
+  const { data: recommendationsData, refetch: refetchRecommendations } = useQuery({
     queryKey: ['banking-recommendations'],
     queryFn: async () => {
       try {
@@ -58,11 +62,11 @@ export function ProfileOverlay() {
   };
 
   const suggestedPolicy = recommendationsData || {
-    inventory_min: 250,
-    inventory_max: 2500,
+    inventory_min: 0,
+    inventory_max: 500,
     min_edge_bps: 1.0,
-    daily_loss_limit_bps: 4.0,
-    max_notional_usd: 250.0,
+    daily_loss_limit_bps: 10.0,
+    max_notional_usd: 100.0,
     confidence: 0.5,
   };
 
@@ -81,17 +85,20 @@ export function ProfileOverlay() {
           description: "Please sign in to upload documents",
           variant: "destructive",
         });
+        setIsUploading(false);
         return;
       }
 
       const uploadedPaths: string[] = [];
       const uploadedDocs: BankingDocument[] = [];
+      const extractedTexts: Array<{ file_path: string; text: string; name: string }> = [];
       
-      // Upload each file to Supabase Storage
+      // Upload each file to Supabase Storage and extract text
       for (const file of Array.from(files)) {
         const filePath = `${user.id}/${Date.now()}-${file.name}`;
         
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
           .from('banking-documents')
           .upload(filePath, file);
         
@@ -109,46 +116,90 @@ export function ProfileOverlay() {
           size: `${(file.size / 1024).toFixed(1)} KB`,
           uploaded: new Date().toISOString(),
         });
+
+        // Extract text from PDF
+        try {
+          toast({
+            title: "Extracting text",
+            description: `Reading ${file.name}...`,
+          });
+          
+          const { text } = await extractPDFText(file);
+          extractedTexts.push({
+            file_path: filePath,
+            text,
+            name: file.name,
+          });
+        } catch (extractError) {
+          console.error('PDF extraction error:', extractError);
+          toast({
+            title: "Extraction warning",
+            description: `Could not extract text from ${file.name}`,
+            variant: "destructive",
+          });
+        }
       }
       
       setDocuments(prev => [...prev, ...uploadedDocs]);
+
+      if (extractedTexts.length === 0) {
+        toast({
+          title: "No text extracted",
+          description: "Could not extract text from any PDFs",
+          variant: "destructive",
+        });
+        setIsUploading(false);
+        return;
+      }
       
-      // Trigger banking document parser
+      // Trigger banking document parser with extracted text
+      toast({
+        title: "Analyzing statements",
+        description: `Processing ${extractedTexts.length} document(s)...`,
+      });
+
       const { data: parseResult, error: parseError } = await supabase.functions.invoke(
         'banking-document-parser',
         {
           body: {
             file_paths: uploadedPaths,
             user_id: user.id,
-          }
+            extracted_texts: extractedTexts,
+          },
         }
       );
       
       if (parseError) {
-        console.error("Parser error:", parseError);
-        toast({
-          title: "Analysis failed",
-          description: "Could not analyze bank statements. Please try again.",
-          variant: "destructive",
-        });
-        return;
+        console.error('Parse error:', parseError);
+        throw new Error(`Failed to parse documents: ${parseError.message}`);
+      }
+
+      if (parseResult?.error) {
+        if (parseResult.error === "No transactions extracted") {
+          toast({
+            title: "No transactions found",
+            description: "Could not recognize transactions in the uploaded statements",
+            variant: "destructive",
+          });
+          setIsUploading(false);
+          return;
+        }
+        throw new Error(parseResult.error);
       }
       
-      console.log('Parse result:', parseResult);
-      
-      // Refresh aggregates after successful parsing
-      await refetchAggregates();
-      
       toast({
-        title: "Documents analyzed",
-        description: `${files.length} file(s) processed. Extracted ${parseResult?.transactions_extracted || 0} transactions.`,
+        title: "Analysis complete",
+        description: `Processed ${parseResult.statements_processed} statement(s)`,
       });
+
+      // Refetch aggregates and recommendations
+      await Promise.all([refetchAggregates(), refetchRecommendations()]);
       
     } catch (error) {
-      console.error("Upload error:", error);
+      console.error('Upload error:', error);
       toast({
         title: "Upload failed",
-        description: error instanceof Error ? error.message : "Unknown error occurred",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
         variant: "destructive",
       });
     } finally {
@@ -159,147 +210,237 @@ export function ProfileOverlay() {
   const deleteDocument = (id: string) => {
     setDocuments(prev => prev.filter(doc => doc.id !== id));
     toast({
-      title: "Document deleted",
-      description: "Banking document removed",
+      title: "Document removed",
+      description: "The document has been removed from the list",
     });
   };
 
   const applyToConsole = async () => {
     try {
-      // Save policy to localStorage for intent form
-      localStorage.setItem('moneypenny_applied_config', JSON.stringify(suggestedPolicy));
+      // Apply recommendations to backend
+      await moneyPenny.aggregates.applyRecommendations(suggestedPolicy);
       
       toast({
         title: "Policy applied",
-        description: "Trading policy has been applied to console",
+        description: "Trading parameters have been updated",
       });
+
+      // Open intent capture overlay with prefilled values
+      overlayManager.openOverlay('intent-capture');
     } catch (error) {
-      console.error("Apply policy error:", error);
+      console.error('Apply error:', error);
       toast({
-        title: "Application failed",
-        description: "Could not apply policy to console",
+        title: "Failed to apply policy",
+        description: error instanceof Error ? error.message : "An unknown error occurred",
         variant: "destructive",
       });
     }
   };
 
+  const cashBuffer = aggregates.lastBalance > 0 && aggregates.avgSurplus > 0
+    ? (aggregates.lastBalance / Math.abs(aggregates.avgSurplus)).toFixed(1)
+    : "N/A";
+
   return (
-    <div className="space-y-4 h-full overflow-y-auto">
-      <div>
-        <h2 className="text-2xl font-bold neon-text">Profile</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Manage your banking documents and trading preferences
-        </p>
-      </div>
-
-      {/* Financial Aggregates */}
-      <Card className="glass-card p-4">
-        <h3 className="text-sm font-semibold mb-3">Financial Overview</h3>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-primary" />
-            <div>
-              <p className="text-xs text-muted-foreground">Avg Surplus</p>
-              <p className="text-sm font-bold">${aggregates.avgSurplus}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-accent" />
-            <div>
-              <p className="text-xs text-muted-foreground">Volatility</p>
-              <p className="text-sm font-bold">{aggregates.surplusVol}%</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-success" />
-            <div>
-              <p className="text-xs text-muted-foreground">Balance</p>
-              <p className="text-sm font-bold">${aggregates.lastBalance}</p>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Banking Documents - Compact */}
-      <Card className="glass-card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold">Banking Documents</h3>
-          <label>
-            <Input
-              type="file"
-              multiple
-              accept=".pdf,.csv"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-            <Button size="sm" variant="outline" className="gap-2" disabled={isUploading} asChild>
-              <span>
-                {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-                {isUploading ? 'Processing...' : 'Upload'}
-              </span>
-            </Button>
-          </label>
-        </div>
-        
-        {documents.length === 0 ? (
-          <p className="text-xs text-muted-foreground text-center py-4">
-            No documents uploaded yet
+    <div className="w-full h-full overflow-auto bg-background p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Financial Profile</h1>
+          <p className="text-muted-foreground">
+            Upload bank statements to generate personalized trading recommendations
           </p>
-        ) : (
-          <ScrollArea className="h-32">
-            <div className="space-y-2">
-              {documents.map(doc => (
-                <div key={doc.id} className="flex items-center justify-between p-2 rounded bg-muted/30 hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-3 w-3 text-muted-foreground" />
-                    <div>
-                      <p className="text-xs font-medium truncate max-w-[200px]">{doc.name}</p>
-                      <p className="text-xs text-muted-foreground">{doc.size}</p>
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => deleteDocument(doc.id)}
-                    className="h-6 w-6 p-0"
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-        )}
-      </Card>
+        </div>
 
-      {/* Trading Policy Suggestions */}
-      <Card className="glass-card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold">Suggested Trading Policy</h3>
-          <Badge variant="outline" className="text-xs">AI Generated</Badge>
-        </div>
-        <div className="grid grid-cols-2 gap-3 text-xs">
-          <div>
-            <p className="text-muted-foreground">Inventory Band (Q¢)</p>
-            <p className="font-mono">{suggestedPolicy.inventory_min || 250} - {suggestedPolicy.inventory_max || 2500}</p>
+        {/* Financial Overview */}
+        <Card className="p-6 glass-card">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-semibold">Financial Overview</h2>
           </div>
-          <div>
-            <p className="text-muted-foreground">Min Edge (bps)</p>
-            <p className="font-mono">{suggestedPolicy.min_edge_bps || 1.0}</p>
+          
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Avg Daily Surplus</p>
+              <div className="flex items-baseline gap-2">
+                <DollarSign className="h-4 w-4 text-primary" />
+                <span className="text-2xl font-bold text-foreground">
+                  {aggregates.avgSurplus.toFixed(2)}
+                </span>
+              </div>
+            </div>
+            
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Volatility</p>
+              <div className="flex items-baseline gap-2">
+                <Activity className="h-4 w-4 text-warning" />
+                <span className="text-2xl font-bold text-foreground">
+                  {aggregates.surplusVol.toFixed(2)}
+                </span>
+              </div>
+            </div>
+            
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">Balance</p>
+              <div className="flex items-baseline gap-2">
+                <DollarSign className="h-4 w-4 text-primary" />
+                <span className="text-2xl font-bold text-foreground">
+                  {aggregates.lastBalance.toFixed(2)}
+                </span>
+              </div>
+            </div>
           </div>
-          <div>
-            <p className="text-muted-foreground">Daily Loss Limit</p>
-            <p className="font-mono">{suggestedPolicy.daily_loss_limit_bps || 4.0} bps</p>
+
+          <div className="mt-4 pt-4 border-t border-border">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">Cash Buffer</span>
+              <span className="text-lg font-semibold text-foreground">{cashBuffer} days</span>
+            </div>
           </div>
-          <div>
-            <p className="text-muted-foreground">Max Notional</p>
-            <p className="font-mono">${suggestedPolicy.max_notional_usd || 250.0}</p>
+        </Card>
+
+        {/* Banking Documents */}
+        <Card className="p-6 glass-card">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-semibold">Banking Documents</h2>
+            </div>
+            
+            <label htmlFor="file-upload">
+              <Button 
+                variant="outline" 
+                disabled={isUploading}
+                className="cursor-pointer"
+                asChild
+              >
+                <div>
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload PDF
+                    </>
+                  )}
+                </div>
+              </Button>
+            </label>
+            <Input
+              id="file-upload"
+              type="file"
+              accept=".pdf"
+              multiple
+              className="hidden"
+              onChange={handleFileUpload}
+              disabled={isUploading}
+            />
           </div>
-        </div>
-        <Button size="sm" className="w-full mt-3" onClick={applyToConsole}>
-          Apply to Console
-        </Button>
-      </Card>
+
+          <ScrollArea className="h-[200px]">
+            {documents.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No documents uploaded yet
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {documents.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <div>
+                        <p className="text-sm font-medium text-foreground">{doc.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.month} • {doc.size}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteDocument(doc.id)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+        </Card>
+
+        {/* Suggested Trading Policy */}
+        <Card className="p-6 glass-card">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              <h2 className="text-xl font-semibold">Suggested Trading Policy</h2>
+              <Badge variant="outline" className="ml-auto">
+                AI-Generated
+              </Badge>
+            </div>
+
+            <div className="space-y-4">
+              <EdgeGauge
+                floorBps={0.5}
+                minEdgeBps={suggestedPolicy.min_edge_bps}
+                liveEdgeBps={suggestedPolicy.min_edge_bps}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Inventory Range</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    ${suggestedPolicy.inventory_min} - ${suggestedPolicy.inventory_max}
+                  </p>
+                </div>
+                
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Min Edge</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {suggestedPolicy.min_edge_bps} bps
+                  </p>
+                </div>
+                
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Max Notional/Day</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    ${suggestedPolicy.max_notional_usd}
+                  </p>
+                </div>
+                
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">Daily Loss Limit</p>
+                  <p className="text-lg font-semibold text-foreground">
+                    {suggestedPolicy.daily_loss_limit_bps} bps
+                  </p>
+                </div>
+              </div>
+
+              {recommendationsData?.reasoning && (
+                <div className="p-4 rounded-lg bg-secondary/50 text-sm text-muted-foreground">
+                  {recommendationsData.reasoning}
+                </div>
+              )}
+
+              <Button 
+                onClick={applyToConsole}
+                className="w-full"
+                size="lg"
+              >
+                Apply to Console
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 }
